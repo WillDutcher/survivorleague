@@ -5,6 +5,7 @@ import { listInvites } from "@/lib/invites";
 import { currentSeason, formatMoney, listEntries, seasonPotCents } from "@/lib/season";
 import { tierConfig } from "@/rules/config";
 import { LogoToggle, SyncControl } from "./display-controls";
+import { WeekControls } from "./week-controls";
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
 
@@ -158,6 +159,16 @@ export default async function AdminPage() {
           <strong>not</strong> league lines until you lock them.
         </p>
         <SyncControl defaultWeek={season.currentWeek ?? 1} />
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Run the week</h2>
+        <p className="muted">
+          The normal order is sync, lock lines Thursday, then process results once games are final.
+          Every one of these is safe to run twice — none of them will double-charge a rebuy or
+          eliminate someone twice.
+        </p>
+        <WeekControls defaultWeek={season.currentWeek ?? 1} />
       </div>
 
       <div className="card">

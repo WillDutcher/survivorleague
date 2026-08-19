@@ -510,3 +510,106 @@ export async function choosePick(_prev: FormState, formData: FormData): Promise<
 
   return { ok: wording[result.action] };
 }
+
+// ---------------------------------------------------------------- weekly processing
+
+/** Lock this week's league lines, freezing them for every later decision (D10). */
+export async function lockLines(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? 0);
+  const { db: database } = await import("@/db/client");
+  const { weeks } = await import("@/db/schema");
+  const { and: andOp, eq: eqOp } = await import("drizzle-orm");
+
+  const [week] = await database
+    .select()
+    .from(weeks)
+    .where(andOp(eqOp(weeks.seasonId, season.id), eqOp(weeks.weekNumber, weekNumber)))
+    .limit(1);
+  if (!week) return { error: `Week ${weekNumber} has not been loaded.` };
+
+  const { lockLeagueLines } = await import("@/lib/sync");
+  const result = await lockLeagueLines(week.id, user.id);
+
+  await db.insert(auditEvents).values({
+    actorUserId: user.id,
+    action: "odds.lock",
+    entityType: "week",
+    entityId: week.id,
+    after: { weekNumber, locked: result.locked, missing: result.missing },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/week");
+
+  if (result.missing.length > 0) {
+    return {
+      ok: `Locked ${result.locked} lines. NO LINE for: ${result.missing.join(", ")} — these need a manual line before default picks can run.`,
+    };
+  }
+  return { ok: `Locked ${result.locked} league lines for Week ${weekNumber}.` };
+}
+
+/** Assign default picks to anyone short of their requirement. */
+export async function runDefaults(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? 0);
+  const { assignDefaultPicks } = await import("@/lib/processing");
+  const report = await assignDefaultPicks(season.id, weekNumber, season.config);
+
+  revalidatePath("/admin");
+  revalidatePath("/week");
+
+  if (!report.ran) return { error: report.skippedReason ?? "Did not run." };
+  return {
+    ok: `Assigned ${report.defaultsAssigned} default pick(s).${
+      report.exceptions.length ? ` ${report.exceptions.length} exception(s) raised.` : ""
+    }`,
+  };
+}
+
+/** Grade the week and advance every entry. */
+export async function runResults(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? 0);
+  const { processWeekResults } = await import("@/lib/processing");
+  const report = await processWeekResults(season.id, weekNumber, season.config);
+
+  await db.insert(auditEvents).values({
+    actorUserId: user.id,
+    action: "results.process",
+    entityType: "season",
+    entityId: season.id,
+    after: { weekNumber, ...report },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/week");
+  revalidatePath("/dashboard");
+
+  if (!report.ran) return { error: report.skippedReason ?? "Did not run." };
+
+  const parts = [
+    `${report.entriesProcessed} entries processed`,
+    `${report.survived} survived`,
+    `${report.rebuysOffered} rebuy offer(s)`,
+    `${report.eliminated} eliminated`,
+  ];
+  if (report.pending > 0) parts.push(`${report.pending} still waiting on unfinished games`);
+  if (report.defaultsAssigned > 0) parts.unshift(`${report.defaultsAssigned} defaults assigned`);
+
+  return { ok: `${parts.join(", ")}.` };
+}
