@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { currentSeason, entryForUser, formatMoney, seasonPotCents } from "@/lib/season";
 import { canIssueInvites } from "@/lib/invites";
 import { tierConfig } from "@/rules/config";
+import { LEAGUE } from "@/lib/league";
 import { InviteButton } from "./invite-button";
 import { SignOutButton } from "./sign-out-button";
 
@@ -56,11 +57,26 @@ export default async function Dashboard() {
           <p>
             <strong>Amount due: {formatMoney(entry.amountOwedCents)}</strong> for the {tier?.label}.
           </p>
-          <p className="muted">
-            Send it by PayPal to the commissioner, marked <strong>friends and family</strong>, with
-            your full name in the note. Once he confirms it, this banner disappears and you can
-            make picks.
-          </p>
+          <div className="pay-instructions">
+            <p style={{ marginTop: 0 }}>
+              Send <strong>{formatMoney(entry.amountOwedCents)}</strong> by PayPal to:
+            </p>
+            <p className="pay-address">{LEAGUE.paypalAddress}</p>
+            <ul>
+              <li>
+                Send as <strong>{LEAGUE.paypalTransferType}</strong>, not goods and services.
+              </li>
+              <li>
+                Put <strong>
+                  {user.firstName} {user.lastName}
+                </strong>{" "}
+                in the note so {LEAGUE.commissionerName} can match it to you.
+              </li>
+            </ul>
+            <p className="muted hint" style={{ marginBottom: 0 }}>
+              Once it is confirmed this banner disappears and your picks start counting.
+            </p>
+          </div>
         </div>
       ) : null}
 

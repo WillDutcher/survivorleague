@@ -336,6 +336,25 @@ Commissioner's worked cases, all consistent with the formula:
 **Decision (made by Claude, delegated):** Minimum 10 characters, no character-class requirements.
 **Rationale:** length beats symbol gymnastics for real security, and complexity rules are what make fifty casual players give up during the one week that matters.
 
+## D29 - ESPN supplies odds too; The Odds API is dropped  [SUPERSEDES D10's provider choice and ARCHITECTURE.md]
+**Decision:** Point spreads come from ESPN's scoreboard payload, the same request that returns the schedule. The Odds API is not used.
+**Rationale (commissioner):** ESPN is not going anywhere, and the spread is already there.
+**Verified against real 2026 Week 1 data:** all 16 games carry odds, with provider name (DraftKings), a `details` string ("SEA -3.5"), a signed `spread`, and explicit `favorite` booleans per side.
+**Implication:**
+- One provider, no API key, no quota, no cost. The last external account requirement for the weekly loop disappears.
+- Schedule and odds arrive in ONE request per week.
+- SIGN CONVENTION: ESPN's `spread` is signed from the HOME team's perspective - negative means home is favored. Deriving the favorite from that sign alone gets away favorites exactly backwards. The parser uses the explicit `favorite` booleans instead, and a test asserts the parsed favorite matches the `details` string for all 16 games.
+- The workflow from D10 is unchanged: fetch Thursday, commissioner reviews, commissioner locks, snapshot is authoritative forever.
+- Lines move and books differ. The commissioner saw HOU -1.5 on espn.com/nfl/odds while the API's DraftKings line read BUF -1.5 for the same game. This is precisely why the snapshot records provider and captured_at, and why the locked line - not the live one - governs every decision.
+- Odds provider remains swappable: `parseLines` returns a provider-neutral shape.
+
+## D30 - Payment destination
+**Decision:** Entry and rebuy payments go to PayPal `Ramtrap@aol.com`, sent as friends and family.
+**Implication:**
+- Lives in `src/lib/league.ts` as the single source, not scattered through templates.
+- The unpaid dashboard banner shows the address, the amount, the transfer type, and instructs the player to put their full name in the note so the commissioner can match it.
+- Friends-and-family avoids goods-and-services fees and keeps the transfers out of business-income reporting (see D9's 1099-K note).
+
 ---
 
 ## Open questions
@@ -343,3 +362,4 @@ Commissioner's worked cases, all consistent with the formula:
 
 - [ ] Commissioner to consult a Virginia attorney before collecting money (see D21). Not blocking.
 - [ ] Verify Resend free-tier daily send cap before the first Thursday blast to ~50 players.
+- [ ] NOTE: 2026 Week 1 opens WEDNESDAY Sept 9 (NE at SEA, 8:20pm ET), not Thursday Sept 10. Deadlines are one day tighter than previously assumed.

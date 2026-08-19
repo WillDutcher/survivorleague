@@ -344,3 +344,19 @@ button[disabled] {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+.pay-instructions {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.pay-address {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  word-break: break-all;
+  margin: 0.25rem 0 0.75rem;
+}
