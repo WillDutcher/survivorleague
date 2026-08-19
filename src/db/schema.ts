@@ -526,3 +526,44 @@ export const passwordResets = pgTable(
   },
   (t) => [unique("password_resets_token_hash_unique").on(t.tokenHash)],
 );
+
+/**
+ * Email verification tokens.
+ *
+ * Single-use, hashed at rest, same as sessions and password resets. The point is
+ * not security theatre: every reminder and every payment nag goes to this
+ * address, so an unverified typo means a player silently never hears from the
+ * league and the commissioner cannot reach them.
+ */
+export const emailVerifications = pgTable(
+  "email_verifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("email_verifications_token_hash_unique").on(t.tokenHash)],
+);
+
+/**
+ * Payment nag log.
+ *
+ * One row per entry per nag, so the escalating schedule can tell what has
+ * already been sent and a retry never mails the same person twice for the same
+ * step (D9 — the app does the nagging, not the commissioner).
+ */
+export const paymentReminders = pgTable(
+  "payment_reminders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entryId: uuid("entry_id").notNull(),
+    /** Which step of the escalation this was: 1, 2, 3... */
+    step: integer("step").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    delivered: boolean("delivered").notNull().default(true),
+  },
+  (t) => [unique("payment_reminders_entry_step_unique").on(t.entryId, t.step)],
+);

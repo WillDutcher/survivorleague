@@ -146,6 +146,17 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     return newUserId;
   });
 
+  // Deliverability, not a gate (see lib/verification.ts). A failure here must
+  // never undo a completed signup.
+  try {
+    const origin =
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+    const { sendVerificationEmail } = await import("@/lib/verification");
+    await sendVerificationEmail(userId, origin);
+  } catch {
+    // Swallowed deliberately: the account exists and the player can resend.
+  }
+
   await createSession(userId, requestHeaders.get("user-agent") ?? undefined);
   redirect("/dashboard");
 }
@@ -737,5 +748,60 @@ export async function sendReminder(_prev: FormState, formData: FormData): Promis
   if (report.skippedReason) return { error: report.skippedReason };
   return {
     ok: `Sent ${report.sent} reminder(s)${report.failed ? `, ${report.failed} failed` : ""}. Locally these are written to ./tmp/mail.`,
+  };
+}
+
+// ---------------------------------------------------------------- verification
+
+export async function resendVerification(_prev: FormState, _data: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const requestHeaders = await headers();
+  const origin =
+    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const { sendVerificationEmail } = await import("@/lib/verification");
+  const result = await sendVerificationEmail(user.id, origin);
+
+  revalidatePath("/dashboard");
+  return result.sent
+    ? { ok: `Confirmation sent to ${user.email}. Locally it is written to ./tmp/mail.` }
+    : { error: result.error ?? "Could not send the confirmation email." };
+}
+
+// ---------------------------------------------------------------- payment nags
+
+export async function runPaymentReminders(_prev: FormState, _data: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const requestHeaders = await headers();
+  const origin =
+    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const { loadSlate } = await import("@/lib/slate");
+  const slate = await loadSlate(season.id, season.currentWeek ?? 1, season.config);
+
+  const { sendPaymentReminders } = await import("@/lib/payment-nag");
+  const report = await sendPaymentReminders(season, origin, new Date(), slate?.startsAt ?? null);
+
+  await db.insert(auditEvents).values({
+    actorUserId: user.id,
+    action: "payments.remind",
+    entityType: "season",
+    entityId: season.id,
+    after: { sent: report.sent, failed: report.failed, skipped: report.skipped },
+  });
+
+  revalidatePath("/admin");
+
+  if (report.sent === 0 && report.failed === 0) {
+    return { ok: report.details[0] ?? "Nobody was due a reminder." };
+  }
+  return {
+    ok: `Sent ${report.sent}${report.failed ? `, ${report.failed} failed` : ""}. ${report.details.join(" · ")}`,
   };
 }

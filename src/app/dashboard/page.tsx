@@ -6,6 +6,8 @@ import { canIssueInvites } from "@/lib/invites";
 import { tierConfig } from "@/rules/config";
 import { LEAGUE } from "@/lib/league";
 import { openRebuyFor } from "@/lib/rebuy-flow";
+import { isVerified } from "@/lib/verification";
+import { VerifyBanner } from "./verify-banner";
 import { RebuyPanel } from "./rebuy-panel";
 import { InviteButton } from "./invite-button";
 import { SignOutButton } from "./sign-out-button";
@@ -33,6 +35,7 @@ export default async function Dashboard() {
   const mayInvite = await canIssueInvites(user.id, season.id);
   const tier = entry ? tierConfig(season.config, entry.tier) : null;
   const rebuy = entry ? await openRebuyFor(entry.id) : null;
+  const verified = await isVerified(user.id);
 
   return (
     <>
@@ -48,6 +51,8 @@ export default async function Dashboard() {
         </div>
         <SignOutButton />
       </div>
+
+      {!verified ? <VerifyBanner email={user.email} /> : null}
 
       {rebuy ? (
         <RebuyPanel

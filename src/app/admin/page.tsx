@@ -5,6 +5,9 @@ import { listInvites } from "@/lib/invites";
 import { currentSeason, formatMoney, listEntries, seasonPotCents } from "@/lib/season";
 import { tierConfig } from "@/rules/config";
 import { rebuysAwaitingPayment } from "@/lib/rebuy-flow";
+import { reminderHistory } from "@/lib/payment-nag";
+import { unverifiedUsers } from "@/lib/verification";
+import { NagControl } from "./nag-control";
 import { LogoToggle, SyncControl } from "./display-controls";
 import { RebuyRow } from "./rebuy-row";
 import { ReminderControl, WeekControls } from "./week-controls";
@@ -41,6 +44,8 @@ export default async function AdminPage() {
   const pot = await seasonPotCents(season.id);
   const invites = await listInvites(season.id);
   const pendingRebuys = await rebuysAwaitingPayment(season.id);
+  const unverified = await unverifiedUsers();
+  const nagged = await reminderHistory(season.id);
   const entryNameById = new Map(entries.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
 
   const awaiting = entries.filter((e) => e.amountOwedCents > 0);
@@ -89,6 +94,11 @@ export default async function AdminPage() {
           Marking someone paid puts them in the pool immediately and adds their entry to the pot.
           Every change here is recorded in the audit log with your name on it.
         </p>
+
+        <NagControl
+          outstanding={awaiting.length}
+          history={nagged.map((n) => `${n.name}: step ${Math.max(...n.steps)}`)}
+        />
 
         {awaiting.length === 0 ? (
           <p className="status-ok"> Nobody is waiting. Everyone who has signed up has paid.</p>
@@ -217,6 +227,25 @@ export default async function AdminPage() {
           pool ever becomes public-facing. Team names are always shown as text either way.
         </p>
         <LogoToggle enabled={season.showTeamLogos} />
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Unconfirmed emails</h2>
+        <p className="muted">
+          These addresses have never been confirmed, so reminders may be going nowhere. This does
+          not stop anyone playing — it just means you cannot rely on reaching them.
+        </p>
+        {unverified.length === 0 ? (
+          <p className="status-ok"> Every address is confirmed.</p>
+        ) : (
+          <ul>
+            {unverified.map((u) => (
+              <li key={u.id}>
+                {u.firstName} {u.lastName} — <span className="muted">{u.email}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="card">
