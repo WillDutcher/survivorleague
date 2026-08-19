@@ -47,6 +47,29 @@ service, no email provider, no API keys:
 - **NFL schedule and scores** — ESPN's public endpoints, no key needed.
 - **Point spreads** — optional. Without `ODDS_API_KEY`, manual line entry still works.
 
+## Seeing it work
+
+The 2026 games have not been played, so a fresh install has nothing to grade and
+no eliminations to show. To click through a realistic, fully-played league:
+
+```bash
+npm run demo
+```
+
+That builds a 2025 Demo League from **real completed results**, plays four weeks,
+and leaves a deliberate spread of states: survivors, someone carrying a tie debt
+(two winning picks required), outstanding rebuy offers, an elimination, and an
+unpaid signup. It prints a sign-in for every player; they all share one password,
+so you can see the app through each of their eyes.
+
+Your own admin account remains the commissioner.
+
+```bash
+npm run demo:clear
+```
+
+Removes it and makes the real season active again.
+
 ## Commands
 
 | Command | Does |
@@ -61,6 +84,8 @@ service, no email provider, no API keys:
 | `npm run db:generate` | Generate a migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply pending migrations |
 | `npm run db:studio` | Browse the database in a GUI |
+| `npm run demo` | Build a fully-played demo league from real 2025 results |
+| `npm run demo:clear` | Remove the demo and restore the real season |
 
 ## How the code is organized
 

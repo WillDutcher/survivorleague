@@ -136,6 +136,12 @@ export const seasons = pgTable(
     year: integer("year").notNull(),
     name: text("name").notNull(),
     mode: seasonModeEnum("mode").notNull().default("live"),
+    /**
+     * Which season the app is currently operating. Exactly one should be true;
+     * `currentSeason()` falls back to the newest year if none is flagged, so a
+     * fresh install still works.
+     */
+    isActive: boolean("is_active").notNull().default(false),
     registrationOpen: boolean("registration_open").notNull().default(false),
     currentWeek: integer("current_week"),
     /** Serialized SeasonConfig: prices, windows, deadlines, tie rule (D3, D18a, D20). */

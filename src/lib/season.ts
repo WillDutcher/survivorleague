@@ -15,6 +15,7 @@ import type { EntryTier } from "@/rules/types";
 
 export interface SeasonRow {
   id: string;
+  isActive?: boolean;
   year: number;
   name: string;
   mode: "practice" | "live";
@@ -25,9 +26,18 @@ export interface SeasonRow {
   config: SeasonConfig;
 }
 
-/** The season the app is currently operating. Newest live season wins. */
+/**
+ * The season the app is currently operating.
+ *
+ * Prefers the season explicitly flagged active; falls back to the newest year so
+ * a fresh install works before anyone has chosen one.
+ */
 export async function currentSeason(): Promise<SeasonRow | null> {
-  const [row] = await db.select().from(seasons).orderBy(sql`${seasons.year} desc`).limit(1);
+  const [flagged] = await db.select().from(seasons).where(eq(seasons.isActive, true)).limit(1);
+  const [newest] = flagged
+    ? [flagged]
+    : await db.select().from(seasons).orderBy(sql`${seasons.year} desc`).limit(1);
+  const row = newest;
   if (!row) return null;
 
   return {
@@ -39,6 +49,7 @@ export async function currentSeason(): Promise<SeasonRow | null> {
     currentWeek: row.currentWeek,
     playerInvitesEnabled: row.playerInvitesEnabled,
     showTeamLogos: row.showTeamLogos,
+    isActive: row.isActive,
     // Fall back to the compiled defaults if the stored blob is ever unreadable,
     // so a bad row cannot take the whole app down mid-season.
     config: (row.rules as SeasonConfig | null) ?? SEASON_2026,
