@@ -15,6 +15,13 @@
       "when": 1787102082177,
       "tag": "0001_typical_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787103517537,
+      "tag": "0002_lush_shaman",
+      "breakpoints": true
     }
   ]
 }

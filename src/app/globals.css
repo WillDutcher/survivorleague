@@ -360,3 +360,86 @@ button[disabled] {
   word-break: break-all;
   margin: 0.25rem 0 0.75rem;
 }
+
+/* ---------------------------------------------------------------- teams */
+
+.team-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-logo {
+  object-fit: contain;
+  flex: none;
+}
+
+.team-chip {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid;
+  flex: none;
+}
+
+.team-name {
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- slate */
+
+.slate {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.matchup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.matchup-teams {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.matchup-at {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.matchup-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.line-chip {
+  font-weight: 700;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+@media (max-width: 40rem) {
+  .matchup {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

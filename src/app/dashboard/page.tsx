@@ -169,6 +169,8 @@ export default async function Dashboard() {
       )}
 
       <p className="muted">
+        <Link href="/week">This week&rsquo;s games</Link>
+        {" · "}
         <Link href="/rules">League rules and terms</Link>
         {user.isAdmin ? (
           <>

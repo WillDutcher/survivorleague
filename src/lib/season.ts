@@ -21,6 +21,7 @@ export interface SeasonRow {
   registrationOpen: boolean;
   currentWeek: number | null;
   playerInvitesEnabled: boolean;
+  showTeamLogos: boolean;
   config: SeasonConfig;
 }
 
@@ -37,6 +38,7 @@ export async function currentSeason(): Promise<SeasonRow | null> {
     registrationOpen: row.registrationOpen,
     currentWeek: row.currentWeek,
     playerInvitesEnabled: row.playerInvitesEnabled,
+    showTeamLogos: row.showTeamLogos,
     // Fall back to the compiled defaults if the stored blob is ever unreadable,
     // so a bad row cannot take the whole app down mid-season.
     config: (row.rules as SeasonConfig | null) ?? SEASON_2026,

@@ -16,7 +16,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:nuke": "docker compose down -v",
-    "seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "sync:fixtures": "tsx --env-file=.env.local scripts/sync-fixtures.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

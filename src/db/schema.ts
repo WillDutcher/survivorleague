@@ -141,6 +141,12 @@ export const seasons = pgTable(
     /** Serialized SeasonConfig: prices, windows, deadlines, tie rule (D3, D18a, D20). */
     rules: jsonb("rules").notNull(),
     playerInvitesEnabled: boolean("player_invites_enabled").notNull().default(true),
+    /**
+     * Display team logos instead of colour chips (D31). Defaults to FALSE.
+     * Colours carry no trademark exposure; logos are a deliberate opt-in the
+     * commissioner can switch off in one click if the pool ever goes public.
+     */
+    showTeamLogos: boolean("show_team_logos").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique("seasons_year_mode_unique").on(t.year, t.mode)],
@@ -155,9 +161,17 @@ export const teams = pgTable(
     name: text("name").notNull(),
     conference: text("conference").notNull(),
     division: text("division").notNull(),
-    /** Seeded from the provider rather than hardcoded; used for pick controls, not logos. */
+    /** Seeded from the provider rather than hardcoded. The always-safe display mode. */
     colorPrimary: text("color_primary").notNull(),
     colorSecondary: text("color_secondary").notNull(),
+    /**
+     * Provider-hosted logo URLs (D31). Hotlinked, never mirrored: serving a copy
+     * ourselves would mean reproducing the artwork, which is a worse copyright
+     * position than letting the provider's CDN serve its own image.
+     * Only rendered when the season opts in; colors remain the default.
+     */
+    logoUrl: text("logo_url"),
+    logoUrlDark: text("logo_url_dark"),
   },
 );
 

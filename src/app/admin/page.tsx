@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { listInvites } from "@/lib/invites";
 import { currentSeason, formatMoney, listEntries, seasonPotCents } from "@/lib/season";
 import { tierConfig } from "@/rules/config";
+import { LogoToggle, SyncControl } from "./display-controls";
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
 
@@ -143,6 +144,26 @@ export default async function AdminPage() {
             </tbody>
           </table>
         )}
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Data sync</h2>
+        <p className="muted">
+          Pulls teams, schedule, scores and candidate point spreads from ESPN. Safe to run
+          repeatedly — it updates in place and never duplicates. Lines captured here are{" "}
+          <strong>not</strong> league lines until you lock them.
+        </p>
+        <SyncControl defaultWeek={season.currentWeek ?? 1} />
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Team display</h2>
+        <p className="muted">
+          Colours are the default and carry no trademark exposure. Logos are hotlinked from the
+          provider, never copied, and are a deliberate opt-in — switch back in one click if this
+          pool ever becomes public-facing. Team names are always shown as text either way.
+        </p>
+        <LogoToggle enabled={season.showTeamLogos} />
       </div>
 
       <div className="card">

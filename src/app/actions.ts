@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { auditEvents, entries, payments, users } from "@/db/schema";
+import { auditEvents, entries, payments, seasons, users } from "@/db/schema";
 import {
   MINIMUM_AGE,
   ageOn,
@@ -308,4 +308,71 @@ export async function unmarkEntryPaid(_prev: FormState, formData: FormData): Pro
 
   revalidatePath("/admin");
   return { ok: "Payment reversed." };
+}
+
+// ---------------------------------------------------------------- display
+
+/**
+ * Toggle team logos on or off for the season (D31).
+ *
+ * Colours are the default because they carry no trademark exposure. Logos are a
+ * deliberate opt-in the commissioner can switch off in one click if the pool
+ * ever becomes public-facing.
+ */
+export async function toggleTeamLogos(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const enable = formData.get("enable") === "true";
+
+  await db.update(seasons).set({ showTeamLogos: enable }).where(eq(seasons.id, season.id));
+  await db.insert(auditEvents).values({
+    actorUserId: user.id,
+    action: "season.toggle_logos",
+    entityType: "season",
+    entityId: season.id,
+    before: { showTeamLogos: !enable },
+    after: { showTeamLogos: enable },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  return { ok: enable ? "Logos on." : "Colours on." };
+}
+
+/** Pull teams, schedule, scores and candidate lines from the provider. */
+export async function runSync(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? 1);
+
+  try {
+    const { syncTeams, syncWeek } = await import("@/lib/sync");
+    const teamResult = await syncTeams();
+    const weekResult = await syncWeek(season.id, season.year, weekNumber, season.config);
+
+    await db.insert(auditEvents).values({
+      actorUserId: user.id,
+      action: "sync.run",
+      entityType: "season",
+      entityId: season.id,
+      after: { weekNumber, ...teamResult, ...weekResult },
+    });
+
+    revalidatePath("/admin");
+    return {
+      ok: `Synced ${teamResult.teamsUpserted} teams, ${weekResult.gamesUpserted} games and ${weekResult.linesCaptured} lines for Week ${weekNumber}.`,
+    };
+  } catch (error) {
+    return {
+      error: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }

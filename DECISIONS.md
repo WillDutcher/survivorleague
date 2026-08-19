@@ -355,6 +355,22 @@ Commissioner's worked cases, all consistent with the formula:
 - The unpaid dashboard banner shows the address, the amount, the transfer type, and instructs the player to put their full name in the note so the commissioner can match it.
 - Friends-and-family avoids goods-and-services fees and keeps the transfers out of business-income reporting (see D9's 1099-K note).
 
+## D31 - Team logos are an opt-in flag; colours are the default
+**Decision:** Both display modes exist. `seasons.show_team_logos` defaults to FALSE (colours); the commissioner can switch to logos in one click from admin.
+**Rationale (commissioner):** wants it to look nice, but asked whether logos are legal.
+
+**The legal picture (RESEARCH/JUDGEMENT, NOT LEGAL ADVICE):**
+- TRADEMARK: team logos are registered marks. Using a mark to identify the actual thing it refers to is nominative fair use - the strongest argument available. Two of its three legs are easily satisfied here (no more of the mark than needed; nothing implying endorsement). The weak leg is the first: NFL teams ARE readily identifiable by name and colour, which is exactly why PROJECT_BRIEF said to avoid depending on logos.
+- COPYRIGHT: covers the artwork itself. HOTLINK, NEVER MIRROR. Serving our own copy would be reproduction and distribution; hotlinking means the provider's CDN serves its own image and we never make a copy.
+- PRACTICAL, non-legal: these URLs come from an unofficial ESPN API. Hotlinking is plausibly against their terms and can break without notice.
+- RISK READ: for a private, invite-only, ~50-person, no-rake pool the realistic chance of anyone caring is very low - but it is not zero, and it scales directly with visibility. A public site is a different conversation.
+
+**Implication:**
+- Colours are the risk-free baseline and remain the default. Logos are a deliberate opt-in, reversible in one click without a rebuild.
+- Logo URLs are stored on `teams`; the images are never downloaded.
+- ACCESSIBILITY, enforced in both modes: the team is ALWAYS identified in text. The logo/chip is `aria-hidden` decoration and never the only way to tell teams apart, so screen-reader users, colour-blind users, and anyone whose images failed to load all get the same information.
+- A failed image degrades to the colour chip rather than an empty box - the CDN is unofficial and may vanish.
+
 ---
 
 ## Open questions
