@@ -18,6 +18,9 @@ import {
   MINIMUM_AGE,
   ageOn,
   attemptLogin,
+  changePassword as changePasswordFor,
+  consumePasswordReset,
+  createPasswordReset,
   createSession,
   currentUser,
   destroySession,
@@ -375,4 +378,94 @@ export async function runSync(_prev: FormState, formData: FormData): Promise<For
       error: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
+}
+
+// ---------------------------------------------------------------- password
+
+export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const current = String(formData.get("currentPassword") ?? "");
+  const next = String(formData.get("newPassword") ?? "");
+  const confirm = String(formData.get("confirmPassword") ?? "");
+
+  if (next !== confirm) return { error: "The two new passwords do not match." };
+
+  const result = await changePasswordFor(user.id, current, next);
+  if (!result.ok) return { error: result.message };
+
+  await db.insert(auditEvents).values({
+    actorUserId: user.id,
+    action: "user.password_change",
+    entityType: "user",
+    entityId: user.id,
+    reason: "Changed own password",
+  });
+
+  return { ok: "Password changed. Any other devices you were signed in on have been signed out." };
+}
+
+/**
+ * Start a reset.
+ *
+ * Always reports success, even for an unknown address. Saying "no such account"
+ * would let anyone test whether a given person is in the league.
+ */
+export async function requestPasswordReset(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const email = String(formData.get("email") ?? "");
+  const sameAnswerEitherWay =
+    "If that address has an account, a reset link is on its way. The link is good for one hour.";
+
+  if (!email.includes("@")) return { error: "Enter a valid email address." };
+
+  const reset = await createPasswordReset(email);
+  if (!reset) return { ok: sameAnswerEitherWay };
+
+  const requestHeaders = await headers();
+  const origin =
+    requestHeaders.get("origin") ??
+    `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+  const link = `${origin}/reset/${reset.token}`;
+
+  const { sendEmail } = await import("@/lib/mail");
+  await sendEmail({
+    to: reset.email,
+    type: "password_reset",
+    subject: "Reset your Survivor League password",
+    html: `
+      <p>Hi ${reset.firstName},</p>
+      <p>Someone asked to reset the password for your Survivor League account.</p>
+      <p><a href="${link}">Choose a new password</a></p>
+      <p>This link works once and expires in one hour.</p>
+      <p>If this wasn't you, ignore this email — nothing has changed.</p>
+      <p style="color:#666;font-size:12px">${link}</p>
+    `,
+  });
+
+  return { ok: sameAnswerEitherWay };
+}
+
+export async function resetPassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const token = String(formData.get("token") ?? "");
+  const next = String(formData.get("newPassword") ?? "");
+  const confirm = String(formData.get("confirmPassword") ?? "");
+
+  if (next !== confirm) return { error: "The two passwords do not match." };
+
+  const result = await consumePasswordReset(token, next);
+  if (!result.ok) return { error: result.message };
+
+  await db.insert(auditEvents).values({
+    actorUserId: result.userId,
+    action: "user.password_reset",
+    entityType: "user",
+    entityId: result.userId,
+    reason: "Password reset via emailed link",
+  });
+
+  redirect("/login?reset=1");
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signIn, type FormState } from "@/app/actions";
 
 export default function LoginPage() {
@@ -37,6 +38,10 @@ export default function LoginPage() {
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
+
+      <p className="muted">
+        <Link href="/forgot">Forgot your password?</Link>
+      </p>
 
       <p className="muted">
         This pool is invite-only. If you do not have an account, ask whoever runs your league
