@@ -23,6 +23,20 @@ export interface OutboundEmail {
   type: string;
 }
 
+/**
+ * Where replies go.
+ *
+ * The sending domain has receiving switched off, so a reply to the From address
+ * would vanish silently. Players absolutely do reply to reminders -- "I cannot
+ * make my pick", "did you get my $20" -- so REPLY_TO points at an inbox the
+ * commissioner actually reads.
+ *
+ * Falls back to the From address if unset, which is the current behaviour.
+ */
+function replyTo(): string | undefined {
+  return process.env.REPLY_TO || undefined;
+}
+
 export interface MailResult {
   delivered: boolean;
   transport: "file" | "resend";
@@ -53,6 +67,7 @@ async function writeToDisk(message: OutboundEmail): Promise<MailResult> {
     <div><strong>To:</strong> ${escapeHtml(message.to)}</div>
     <div><strong>Subject:</strong> ${escapeHtml(message.subject)}</div>
     <div><strong>Type:</strong> ${escapeHtml(message.type)}</div>
+    ${replyTo() ? `<div><strong>Reply-To:</strong> ${escapeHtml(replyTo() as string)}</div>` : ""}
     <div style="color:#666;margin-top:.5rem">Local development — not actually sent.</div>
   </div>
   ${message.html}
@@ -85,6 +100,7 @@ async function sendViaResend(message: OutboundEmail, apiKey: string): Promise<Ma
         to: [message.to],
         subject: message.subject,
         html: message.html,
+        ...(replyTo() ? { reply_to: replyTo() } : {}),
       }),
     });
 
