@@ -59,6 +59,7 @@ export default async function AdminPage() {
           <h1>Commissioner</h1>
           <p className="muted">
             {season.name} · {season.mode === "practice" ? "practice" : "live"} ·{" "}
+            {season.seasonType === 1 ? "PRESEASON · " : null}
             registration {season.registrationOpen ? "open" : "closed"}
           </p>
         </div>

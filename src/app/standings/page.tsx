@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
-import { currentSeason, formatMoney, seasonPotCents } from "@/lib/season";
+import { currentSeason, formatMoney, seasonPotCents, weekLabel, weekLabelShort } from "@/lib/season";
 import { loadStandings, teamsRemaining } from "@/lib/standings";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export default async function StandingsPage() {
         <div>
           <h1>Standings</h1>
           <p className="muted">
-            {season.name} · Week {currentWeek}
+            {season.name} · {weekLabel(season.seasonType, currentWeek)}
           </p>
         </div>
         <Link href="/dashboard">Back to dashboard</Link>
@@ -91,7 +91,7 @@ export default async function StandingsPage() {
                       ) : (
                         row.history.map((h) => (
                           <span key={`${h.week}-${h.teamId}`} className="pick-chip">
-                            W{h.week} {h.teamId}
+                            {weekLabelShort(season.seasonType, h.week)} {h.teamId}
                             {h.outcome === "win" ? " ✓" : h.outcome === "loss" ? " ✕" : h.outcome === "tie" ? " =" : ""}
                             {h.source === "default" ? " (auto)" : ""}
                           </span>
@@ -124,7 +124,7 @@ export default async function StandingsPage() {
                     <div className="pick-history">
                       {row.history.map((h) => (
                         <span key={`${h.week}-${h.teamId}`} className="pick-chip">
-                          W{h.week} {h.teamId}
+                          {weekLabelShort(season.seasonType, h.week)} {h.teamId}
                           {h.outcome === "win" ? " ✓" : h.outcome === "loss" ? " ✕" : h.outcome === "tie" ? " =" : ""}
                         </span>
                       ))}

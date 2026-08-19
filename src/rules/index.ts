@@ -12,6 +12,7 @@
 export * from "./types";
 export * from "./config";
 export * from "./locks";
+export * from "./weeks";
 export * from "./eligibility";
 export * from "./defaults";
 export * from "./results";

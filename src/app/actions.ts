@@ -370,7 +370,16 @@ export async function runSync(_prev: FormState, formData: FormData): Promise<For
   try {
     const { syncTeams, syncWeek } = await import("@/lib/sync");
     const teamResult = await syncTeams();
-    const weekResult = await syncWeek(season.id, season.year, weekNumber, season.config);
+    const weekResult = await syncWeek(
+      season.id,
+      season.year,
+      weekNumber,
+      season.config,
+      undefined,
+      // Whatever this season IS — preseason seasons sync preseason games and
+      // never touch the real schedule (D32).
+      season.seasonType === 1 ? 1 : 2,
+    );
 
     await db.insert(auditEvents).values({
       actorUserId: user.id,
@@ -742,7 +751,14 @@ export async function sendReminder(_prev: FormState, formData: FormData): Promis
     requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
 
   const { sendWeeklyReminder } = await import("@/lib/reminders");
-  const report = await sendWeeklyReminder(season.id, season.name, weekNumber, season.config, origin);
+  const report = await sendWeeklyReminder(
+    season.id,
+    season.name,
+    weekNumber,
+    season.config,
+    origin,
+    season.seasonType,
+  );
 
   revalidatePath("/admin");
   if (report.skippedReason) return { error: report.skippedReason };

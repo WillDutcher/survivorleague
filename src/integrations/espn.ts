@@ -245,11 +245,20 @@ export async function fetchTeams(): Promise<EspnTeam[]> {
   return parseTeams(await getJson(`${ESPN_BASE}/teams`));
 }
 
+/** 1 = preseason, 2 = regular season. Never guessed; always passed explicitly. */
+export type SeasonType = 1 | 2;
+
+export const SEASON_TYPE = {
+  preseason: 1,
+  regular: 2,
+} as const;
+
 export async function fetchWeek(
   seasonYear: number,
   weekNumber: number,
+  seasonType: SeasonType = SEASON_TYPE.regular,
 ): Promise<ParsedWeek & { lines: EspnLine[] }> {
-  const url = `${ESPN_BASE}/scoreboard?dates=${seasonYear}&seasontype=2&week=${weekNumber}`;
+  const url = `${ESPN_BASE}/scoreboard?dates=${seasonYear}&seasontype=${seasonType}&week=${weekNumber}`;
   const payload = await getJson(url);
   // Schedule and odds arrive together, so one request covers both (D29).
   return { ...parseScoreboard(payload), lines: parseLines(payload) };

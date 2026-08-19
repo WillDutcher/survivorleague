@@ -16,6 +16,8 @@ import type { EntryTier } from "@/rules/types";
 export interface SeasonRow {
   id: string;
   isActive?: boolean;
+  /** 1 = preseason, 2 = regular season. */
+  seasonType: number;
   year: number;
   name: string;
   mode: "practice" | "live";
@@ -50,6 +52,7 @@ export async function currentSeason(): Promise<SeasonRow | null> {
     playerInvitesEnabled: row.playerInvitesEnabled,
     showTeamLogos: row.showTeamLogos,
     isActive: row.isActive,
+    seasonType: row.seasonType,
     // Fall back to the compiled defaults if the stored blob is ever unreadable,
     // so a bad row cannot take the whole app down mid-season.
     config: (row.rules as SeasonConfig | null) ?? SEASON_2026,
@@ -163,3 +166,7 @@ export function formatMoney(cents: number): string {
 export function tierLabel(config: SeasonConfig, tier: EntryTier): string {
   return tierConfig(config, tier).label;
 }
+
+// Week naming is pure league logic and lives in the rule engine; re-exported
+// here so callers have one obvious import for season display helpers.
+export { weekLabel, weekLabelShort, PRESEASON_LAST_API_WEEK } from "@/rules/weeks";

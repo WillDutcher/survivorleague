@@ -21,6 +21,8 @@ import {
   type EspnLine,
   type EspnTeam,
   type ParsedWeek,
+  type SeasonType,
+  SEASON_TYPE,
 } from "@/integrations/espn";
 import { sundayDeadlineFor } from "@/rules/locks";
 import type { SeasonConfig } from "@/rules/config";
@@ -84,9 +86,9 @@ export async function syncTeams(source?: EspnTeam[]): Promise<SyncResult> {
 /**
  * One week's schedule, scores, and candidate lines.
  *
- * IMPORTANT: always seasontype=2. ESPN uses 1 for preseason, and syncing
- * exhibition games as if they counted would be silent and catastrophic (D29).
- * `fetchWeek` hardcodes it; this note exists so nobody "helpfully" parameterizes it.
+ * `seasonType` defaults to the REGULAR season. Preseason must be asked for
+ * explicitly and belongs to a season row that says so — syncing exhibition games
+ * into a real season would be silent and catastrophic (D29, D32).
  */
 export async function syncWeek(
   seasonId: string,
@@ -94,8 +96,9 @@ export async function syncWeek(
   weekNumber: number,
   config: SeasonConfig,
   source?: ParsedWeek & { lines: EspnLine[] },
+  seasonType: SeasonType = SEASON_TYPE.regular,
 ): Promise<SyncResult> {
-  const parsed = source ?? (await fetchWeek(seasonYear, weekNumber));
+  const parsed = source ?? (await fetchWeek(seasonYear, weekNumber, seasonType));
   const exceptions: string[] = [];
 
   for (const unknown of parsed.unknownStatuses) {

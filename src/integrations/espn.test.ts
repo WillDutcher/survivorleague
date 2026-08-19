@@ -3,6 +3,7 @@ import teamsFixture from "./fixtures/espn-teams.json";
 import week1Fixture from "./fixtures/espn-week1.json";
 import preseasonFixture from "./fixtures/espn-preseason-week3.json";
 import { mapStatus, parseLines, parseScoreboard, parseTeams } from "./espn";
+import { weekLabel } from "../rules/weeks";
 
 /**
  * These run against real captured ESPN payloads. The endpoint is unofficial and
@@ -198,5 +199,33 @@ describe("preseason is a different season type", () => {
     for (const game of preseason.games) {
       expect(regularIds.has(game.providerGameId), game.providerGameId).toBe(false);
     }
+  });
+});
+
+/**
+ * ESPN's preseason week numbers are offset by one from the labels the NFL shows,
+ * because API week 1 is the Hall of Fame game. Getting this wrong means players
+ * see "Week 3" while NFL.com says "PRE WK 2" for the same games.
+ */
+describe("preseason week numbering", () => {
+  it("API preseason week 3 is what the NFL calls Preseason Week 2", () => {
+    const week = parseScoreboard(preseasonFixture);
+    expect(week.weekNumber).toBe(3);
+    expect(weekLabel(1, week.weekNumber)).toBe("Preseason Week 2");
+  });
+
+  it("API week 1 is the Hall of Fame game, not Preseason Week 1", () => {
+    expect(weekLabel(1, 1)).toBe("Hall of Fame Game");
+  });
+
+  it("maps the whole preseason the way the NFL labels it", () => {
+    expect(weekLabel(1, 2)).toBe("Preseason Week 1");
+    expect(weekLabel(1, 3)).toBe("Preseason Week 2");
+    expect(weekLabel(1, 4)).toBe("Preseason Week 3");
+  });
+
+  it("leaves regular-season weeks alone", () => {
+    expect(weekLabel(2, 1)).toBe("Week 1");
+    expect(weekLabel(2, 18)).toBe("Week 18");
   });
 });

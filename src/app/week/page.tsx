@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
-import { currentSeason, entryForUser } from "@/lib/season";
+import { currentSeason, entryForUser, weekLabel } from "@/lib/season";
 import { inLeagueTime, lineLabel, loadSlate } from "@/lib/slate";
 import { availabilityFor, loadEntryPickContext } from "@/lib/picks";
 import { TeamBadge } from "@/app/team-badge";
@@ -36,7 +36,7 @@ export default async function WeekPage({
   if (!slate) {
     return (
       <>
-        <h1>Week {weekNumber}</h1>
+        <h1>{weekLabel(season.seasonType, weekNumber)}</h1>
         <div className="card">
           <p>
             No schedule loaded for this week yet.{" "}
@@ -85,7 +85,7 @@ export default async function WeekPage({
     <>
       <div className="page-head">
         <div>
-          <h1>Week {slate.weekNumber}</h1>
+          <h1>{weekLabel(season.seasonType, slate.weekNumber)}</h1>
           <p className="muted">
             {slate.games.length} games ·{" "}
             {slate.sundayDeadlineAt ? (
@@ -97,6 +97,16 @@ export default async function WeekPage({
         </div>
         <Link href="/dashboard">Back to dashboard</Link>
       </div>
+
+      {season.seasonType === 1 ? (
+        <div className="card callout-warning">
+          <p style={{ margin: 0 }}>
+            <strong>This is a preseason dress rehearsal.</strong> These are exhibition games and no
+            money is involved. Everything else behaves exactly as it will in the real season —
+            deadlines, locks, no-reuse, default picks and results all apply.
+          </p>
+        </div>
+      ) : null}
 
       {!canPick ? (
         <div className="card callout-warning">

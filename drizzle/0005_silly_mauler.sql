@@ -1,0 +1,1 @@
+ALTER TABLE "seasons" ADD COLUMN "season_type" integer DEFAULT 2 NOT NULL;

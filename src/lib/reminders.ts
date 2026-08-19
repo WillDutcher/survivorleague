@@ -12,6 +12,7 @@ import { db } from "@/db/client";
 import { entries, jobRuns, notifications, users } from "@/db/schema";
 import { sendEmail } from "@/lib/mail";
 import { inLeagueTime, lineLabel, loadSlate } from "@/lib/slate";
+import { weekLabel } from "@/lib/season";
 import type { SeasonConfig } from "@/rules/config";
 
 export interface ReminderReport {
@@ -26,7 +27,9 @@ export async function sendWeeklyReminder(
   weekNumber: number,
   config: SeasonConfig,
   origin: string,
+  seasonType = 2,
 ): Promise<ReminderReport> {
+  const label = weekLabel(seasonType, weekNumber);
   const runKey = `reminder:${seasonId}:week-${weekNumber}`;
   try {
     await db.insert(jobRuns).values({ runKey, jobName: "weekly-reminder" });
@@ -70,10 +73,10 @@ export async function sendWeeklyReminder(
     const result = await sendEmail({
       to: person.email,
       type: "weekly_reminder",
-      subject: `${seasonName} — Week ${weekNumber} picks due ${deadline}`,
+      subject: `${seasonName} — ${label} picks due ${deadline}`,
       html: `
         <p>${person.firstName},</p>
-        <p>Week ${weekNumber} is open. Picks are due <strong>${deadline}</strong>.</p>
+        <p>${label} is open. Picks are due <strong>${deadline}</strong>.</p>
         ${owed}
         <p>If you miss the deadline you are assigned the strongest available favourite automatically.</p>
         <table style="border-collapse:collapse;font-size:14px">

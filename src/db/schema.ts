@@ -142,6 +142,15 @@ export const seasons = pgTable(
      * fresh install still works.
      */
     isActive: boolean("is_active").notNull().default(false),
+    /**
+     * ESPN season type: 1 = preseason, 2 = regular season.
+     *
+     * A whole season is one or the other. This is deliberately explicit rather
+     * than inferred: syncing exhibition games as if they counted would be silent
+     * and catastrophic, so choosing preseason has to be a decision someone made
+     * on purpose (D29, D32).
+     */
+    seasonType: integer("season_type").notNull().default(2),
     registrationOpen: boolean("registration_open").notNull().default(false),
     currentWeek: integer("current_week"),
     /** Serialized SeasonConfig: prices, windows, deadlines, tie rule (D3, D18a, D20). */

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
-import { currentSeason, entryForUser, formatMoney, seasonPotCents } from "@/lib/season";
+import { currentSeason, entryForUser, formatMoney, seasonPotCents, weekLabel } from "@/lib/season";
 import { canIssueInvites } from "@/lib/invites";
 import { tierConfig } from "@/rules/config";
 import { LEAGUE } from "@/lib/league";
@@ -51,6 +51,15 @@ export default async function Dashboard() {
         </div>
         <SignOutButton />
       </div>
+
+      {season.seasonType === 1 ? (
+        <div className="card">
+          <p style={{ margin: 0 }}>
+            <strong>Preseason dress rehearsal.</strong> Exhibition games, no money. The rules run
+            exactly as they will for real, so this is the week to find out what confuses you.
+          </p>
+        </div>
+      ) : null}
 
       {!verified ? <VerifyBanner email={user.email} /> : null}
 
@@ -162,7 +171,11 @@ export default async function Dashboard() {
             </tr>
             <tr>
               <th scope="row">Current week</th>
-              <td>{season.currentWeek ?? "Season has not started"}</td>
+              <td>
+                {season.currentWeek
+                  ? weekLabel(season.seasonType, season.currentWeek)
+                  : "Season has not started"}
+              </td>
             </tr>
           </tbody>
         </table>
