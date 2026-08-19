@@ -371,11 +371,21 @@ Commissioner's worked cases, all consistent with the formula:
 - ACCESSIBILITY, enforced in both modes: the team is ALWAYS identified in text. The logo/chip is `aria-hidden` decoration and never the only way to tell teams apart, so screen-reader users, colour-blind users, and anyone whose images failed to load all get the same information.
 - A failed image degrades to the colour chip rather than an empty box - the CDN is unofficial and may vanish.
 
+## D33 - Legal consult declined
+**Decision (commissioner):** No attorney consult. The commissioner takes no rake and makes no profit; every dollar collected goes to winners.
+**Context:** D21 recorded research showing Virginia's general gambling statute (18.2-325) is broad, has no explicit carve-out for a no-profit organiser, and that the only apparent exception (18.2-334) requires a private residence and no operator. That was raised, considered, and the commissioner decided to proceed.
+**Implication:**
+- The no-rake posture is now load-bearing rather than incidental. It must stay true in fact:
+  - settlement math balances to the cent (already enforced and tested)
+  - the app never moves money in either direction (D22)
+  - the pool stays private and invite-only (D7), never publicly advertised
+- If the pool ever takes a cut, grows beyond a private friend group, or is publicly promoted, this decision should be revisited.
+- The toggle for team logos (D31) remains available and is unrelated to this.
+
 ---
 
 ## Open questions
 
 
-- [ ] Commissioner to consult a Virginia attorney before collecting money (see D21). Not blocking.
 - [ ] Verify Resend free-tier daily send cap before the first Thursday blast to ~50 players.
 - [ ] NOTE: 2026 Week 1 opens WEDNESDAY Sept 9 (NE at SEA, 8:20pm ET), not Thursday Sept 10. Deadlines are one day tighter than previously assumed.
