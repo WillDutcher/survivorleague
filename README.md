@@ -14,6 +14,9 @@ all season. Last one standing takes the pot.
 3. **`DECISIONS.md`** — rulings made with the commissioner. **Supersedes the brief wherever they conflict.**
 4. **`ARCHITECTURE.md`** — stack, data model, build order
 
+Working documents: **`TODO.md`** (actionable checklist) and **`NEXT_STEPS.md`**
+(handoff context, calendar, and what is honestly not built).
+
 If the brief and `DECISIONS.md` disagree, `DECISIONS.md` wins. The most
 significant example: the brief describes a post-tie "win and cover the spread"
 rule that has been **removed** — see D16.
