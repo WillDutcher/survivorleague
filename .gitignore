@@ -10,3 +10,6 @@ coverage/
 # Historical material — kept locally, not tracked
 ARCHIVE/
 *.xlsm
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
