@@ -443,3 +443,18 @@ button[disabled] {
     gap: 0.5rem;
   }
 }
+
+.site-header nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 30rem) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
