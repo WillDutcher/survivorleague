@@ -105,14 +105,28 @@ describe("no-reuse enforcement", () => {
     if (!result.ok) expect(result.reason).toBe("already_used");
   });
 
-  it("rejects a team reserved for a different week, and says which", () => {
+  it("rejects a team reserved for a LATER week, and says which", () => {
     const result = validatePick(entry({ committedTeamIds: ["WAS"] }), "WAS", games, {
       reservedInWeek: new Map([["WAS", 9]]),
+      viewingWeek: 4,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("reserved_other_week");
-      expect(result.message).toMatch(/Week 9/);
+      expect(result.message).toMatch(/Reserved for your Week 9/);
+    }
+  });
+
+  it("rejects a team already SPENT in an earlier week, with different wording", () => {
+    // "Reserved" is wrong for a team already used — it is gone, not held.
+    const result = validatePick(entry({ committedTeamIds: ["WAS"] }), "WAS", games, {
+      reservedInWeek: new Map([["WAS", 1]]),
+      viewingWeek: 5,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("already_used");
+      expect(result.message).toMatch(/You used this team in Week 1/);
     }
   });
 

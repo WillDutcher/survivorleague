@@ -15,6 +15,7 @@ import { payloadFromScoreboard, payloadFromTeams, syncTeams, syncWeek } from "..
 import { SEASON_2026 } from "../src/rules/config";
 import teamsDocument from "../src/integrations/fixtures/espn-teams.json";
 import week1Document from "../src/integrations/fixtures/espn-week1.json";
+import week2Document from "../src/integrations/fixtures/espn-week2.json";
 
 async function main() {
   const [season] = await db.select().from(seasons).where(eq(seasons.year, 2026)).limit(1);
@@ -26,16 +27,18 @@ async function main() {
   const teamResult = await syncTeams(payloadFromTeams(teamsDocument));
   console.log(`Teams upserted: ${teamResult.teamsUpserted}`);
 
-  const weekResult = await syncWeek(
-    season.id,
-    2026,
-    1,
-    (season.rules as typeof SEASON_2026) ?? SEASON_2026,
-    payloadFromScoreboard(week1Document),
-  );
-  console.log(`Games upserted: ${weekResult.gamesUpserted}`);
-  console.log(`Candidate lines captured: ${weekResult.linesCaptured}`);
-  if (weekResult.exceptions.length) console.log("Exceptions:", weekResult.exceptions);
+  const config = (season.rules as typeof SEASON_2026) ?? SEASON_2026;
+
+  for (const [weekNumber, document] of [
+    [1, week1Document],
+    [2, week2Document],
+  ] as const) {
+    const weekResult = await syncWeek(season.id, 2026, weekNumber, config, payloadFromScoreboard(document));
+    console.log(
+      `Week ${weekNumber}: ${weekResult.gamesUpserted} games, ${weekResult.linesCaptured} lines`,
+    );
+    if (weekResult.exceptions.length) console.log("  Exceptions:", weekResult.exceptions);
+  }
 
   await rawSql.end();
 }

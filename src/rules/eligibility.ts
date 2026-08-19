@@ -36,6 +36,12 @@ export interface AvailabilityOptions {
   /** Lock instant per game. Omit to ignore lock state. */
   lockAtByGameId?: ReadonlyMap<string, Date>;
   now?: Date;
+  /**
+   * The week being viewed. Lets the message distinguish a team already SPENT in
+   * an earlier week from one RESERVED for a later one — the difference matters
+   * to a player deciding what to do next.
+   */
+  viewingWeek?: WeekNumber;
 }
 
 /**
@@ -67,14 +73,18 @@ export function teamAvailability(
 
       // A team already picked for this week stays selectable so the pick can be changed.
       if (committed.has(teamId) && !currentWeek.has(teamId)) {
-        const reservedWeek = options.reservedInWeek?.get(teamId);
-        if (reservedWeek !== undefined) {
+        const committedWeek = options.reservedInWeek?.get(teamId);
+        if (committedWeek !== undefined) {
+          const viewing = options.viewingWeek;
+          const isFutureReservation = viewing !== undefined && committedWeek > viewing;
           rows.push({
             teamId,
             gameId: game.id,
             available: false,
-            reason: "reserved_other_week",
-            explanation: `Already reserved for your Week ${reservedWeek} pick.`,
+            reason: isFutureReservation ? "reserved_other_week" : "already_used",
+            explanation: isFutureReservation
+              ? `Reserved for your Week ${committedWeek} pick.`
+              : `You used this team in Week ${committedWeek}.`,
           });
         } else {
           rows.push({

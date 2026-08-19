@@ -469,3 +469,44 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
 
   redirect("/login?reset=1");
 }
+
+// ---------------------------------------------------------------- picks
+
+/**
+ * Make, change, or clear a pick.
+ *
+ * Everything that decides legality — team reuse, lock times, entry status —
+ * is evaluated server-side through the rule engine. The button in the browser
+ * only expresses intent.
+ */
+export async function choosePick(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const teamId = String(formData.get("teamId") ?? "");
+  const weekNumber = Number(formData.get("weekNumber") ?? 0);
+  if (!teamId || !weekNumber) return { error: "Missing team or week." };
+
+  const { entryForUser } = await import("@/lib/season");
+  const entry = await entryForUser(user.id, season.id);
+  if (!entry) return { error: "You do not have an entry in this season." };
+
+  const { submitPick } = await import("@/lib/picks");
+  const result = await submitPick(entry.id, season.id, weekNumber, teamId, season.config);
+
+  if (!result.ok) return { error: result.message };
+
+  revalidatePath("/week");
+  revalidatePath("/dashboard");
+
+  const wording = {
+    added: `${teamId} is your pick.`,
+    replaced: `Pick changed to ${teamId}.`,
+    removed: `${teamId} removed. You have no pick for this week yet.`,
+  } as const;
+
+  return { ok: wording[result.action] };
+}

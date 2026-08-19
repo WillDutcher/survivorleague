@@ -458,3 +458,106 @@ button[disabled] {
     gap: 0.5rem;
   }
 }
+
+/* ---------------------------------------------------------------- picking */
+
+.matchup-pickable {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+}
+
+.matchup-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.matchup-picks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.pick-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pick-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  color: var(--text);
+  border: 2px solid var(--border);
+  padding: 0.7rem 0.85rem;
+  min-height: 3rem;
+}
+
+.pick-button:hover:not(:disabled) {
+  border-color: var(--focus);
+}
+
+.pick-button.is-selected {
+  background: var(--surface);
+}
+
+/* Unavailable teams are visibly inert AND say why — never colour alone. */
+.pick-button.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.pick-state {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.pick-button.is-selected .pick-state {
+  color: var(--text);
+}
+
+.pick-reason,
+.pick-error {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding-left: 0.2rem;
+}
+
+.used-teams {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+.used-teams li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 34rem) {
+  .matchup-picks {
+    grid-template-columns: 1fr;
+  }
+}
