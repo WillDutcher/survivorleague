@@ -1,0 +1,159 @@
+/*
+ * Base styles.
+ *
+ * Accessibility is built in from the start (BRIEF): visible focus, sufficient
+ * contrast, and status never conveyed by color alone. Team colors are used to
+ * differentiate matchups, never to carry meaning on their own.
+ */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f7f8fa;
+  --border: #d8dce3;
+  --text: #14171c;
+  --muted: #5b6472;
+  --accent: #14532d;
+  --accent-text: #ffffff;
+  --danger: #9b1c1c;
+  --ok: #14532d;
+  --radius: 10px;
+  --focus: #1d4ed8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #171a20;
+    --border: #2c313a;
+    --text: #eef1f5;
+    --muted: #9aa4b2;
+    --accent: #4ade80;
+    --accent-text: #0f1115;
+    --danger: #fca5a5;
+    --ok: #4ade80;
+    --focus: #93c5fd;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+.shell {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+a {
+  color: var(--focus);
+}
+
+/* Keyboard users must always be able to see where they are. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  background: var(--bg);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Status carries an icon and text, never color alone. */
+.status-ok::before {
+  content: "\2713";
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.status-bad::before {
+  content: "\2715";
+  color: var(--danger);
+  font-weight: 700;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.9em;
+}
+
+@media (max-width: 40rem) {
+  body {
+    font-size: 17px;
+  }
+}

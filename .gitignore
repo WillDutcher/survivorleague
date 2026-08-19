@@ -1,0 +1,12 @@
+node_modules/
+.next/
+dist/
+coverage/
+.env
+.env.local
+.DS_Store
+*.log
+
+# Historical material — kept locally, not tracked
+ARCHIVE/
+*.xlsm

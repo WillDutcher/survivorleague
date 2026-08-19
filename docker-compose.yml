@@ -1,0 +1,32 @@
+# Local development database.
+#
+# Real Postgres, same major version Neon runs, so the constraints that enforce
+# the league rules behave identically in dev and production. Nothing here is
+# used in deployment — production points at a managed Postgres instead.
+#
+#   npm run db:up      start it
+#   npm run db:down    stop it (data survives)
+#   npm run db:nuke    stop it and delete all data
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: survivor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: survivor
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: survivor
+    ports:
+      # 5433 on the host, so it cannot collide with any Postgres you install later.
+      - "5433:5432"
+    volumes:
+      - survivor-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U survivor -d survivor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  survivor-pgdata:
