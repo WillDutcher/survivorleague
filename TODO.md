@@ -11,25 +11,39 @@ Actionable checklist. Narrative context lives in `NEXT_STEPS.md`; rulings live i
 
 - [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION` if changed materially
 - [ ] **W** — Confirm signup date, and whether the season opens live or as practice
-### Item 1 — email that actually reaches players (**do this first**)
+### Item 1 — email that actually reaches players ✅ DONE
+
+Domain `novasurvivorleague.com` registered at Cloudflare, verified in Resend in
+16 minutes. Real send confirmed: **inbox, not spam**, with SPF, DKIM and DMARC
+all PASS and a double DKIM signature. Cloudflare Email Routing forwards
+`commissioner@novasurvivorleague.com` to the commissioner's Gmail, running
+alongside Resend's sending records without conflict — Cloudflare owns the root,
+Resend owns the `send.` subdomain.
+
+<details><summary>Original steps</summary>
 
 Until a domain is verified, Resend is sandboxed: it can only send from
 `onboarding@resend.dev`, and only to the address you signed up with. Fifty
 players would receive nothing. This is the blocker, not polish.
 
-- [ ] **W** — Buy a domain (~$12/yr). Suggested registrar: **Cloudflare** — at-cost pricing, free DNS, fast propagation. Namecheap is fine too
+- [x] **W** — Buy a domain (~$12/yr). Suggested registrar: **Cloudflare** — at-cost pricing, free DNS, fast propagation. Namecheap is fine too
       - Avoid "NFL" in the name — a domain implying affiliation is a real trademark problem
       - Candidates that looked unregistered: `thesurvivorleague.com`, `survivorpool.app`, `survivor.football`, `dutchersurvivor.com`
-- [ ] **W** — Create a free Resend account
-- [ ] **W** — In Resend, add the domain. It gives you 2–3 DNS records (SPF, DKIM, DMARC)
-- [ ] **W** — Paste those records into the domain's DNS. On Cloudflare this verifies in minutes
-- [ ] **W** — Create a Resend API key
-- [ ] **W** — Put in `.env.local`: `RESEND_API_KEY=...` and `MAIL_FROM="Survivor League <league@yourdomain>"`
-- [ ] **C** — Confirm real delivery end to end once the key is in
+- [x] **W** — Create a free Resend account
+- [x] **W** — In Resend, add the domain. It gives you 2–3 DNS records (SPF, DKIM, DMARC)
+- [x] **W** — Paste those records into the domain's DNS. On Cloudflare this verifies in minutes
+- [x] **W** — Create a Resend API key
+- [x] **W** — Put in `.env.local`: `RESEND_API_KEY=...` and `MAIL_FROM="Survivor League <league@yourdomain>"`
+- [x] **C** — Confirm real delivery end to end once the key is in
 
 **Answered:** free tier is 3,000 emails/month, **100/day**, 1 domain. Fine for ~50
 players, but a signup blast plus reminders plus confirmations on one day could
 brush the daily cap.
+
+</details>
+
+- [ ] **W** — Once forwarding is confirmed, change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players never see the personal address
+- [ ] **C** — Optional later: Gmail "Send mail as" via Resend SMTP, so replies also go *out* as commissioner@
 - [ ] **W** — Create Neon project, put connection string in `.env.local`
 - [ ] **W** — Create Vercel account, upgrade to Pro (per-minute cron)
 - [ ] **W** — Run `npm run demo`, sign in as several players, report what confused you
