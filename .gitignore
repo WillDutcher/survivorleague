@@ -13,3 +13,6 @@ ARCHIVE/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+
+# Local mail capture
+tmp/

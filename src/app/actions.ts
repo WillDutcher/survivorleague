@@ -613,3 +613,129 @@ export async function runResults(_prev: FormState, formData: FormData): Promise<
 
   return { ok: `${parts.join(", ")}.` };
 }
+
+// ---------------------------------------------------------------- rebuys
+
+async function myEntry() {
+  const user = await currentUser();
+  if (!user) return null;
+  const season = await currentSeason();
+  if (!season) return null;
+  const { entryForUser } = await import("@/lib/season");
+  const entry = await entryForUser(user.id, season.id);
+  return entry ? { user, season, entry } : null;
+}
+
+export async function takeRebuy(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ctx = await myEntry();
+  if (!ctx) return { error: "Sign in first." };
+
+  const rebuyId = String(formData.get("rebuyId") ?? "");
+  const decision = String(formData.get("decision") ?? "accept");
+
+  const { acceptRebuy, declineRebuy } = await import("@/lib/rebuy-flow");
+  const result =
+    decision === "decline"
+      ? await declineRebuy(rebuyId, ctx.entry.id)
+      : await acceptRebuy(rebuyId, ctx.entry.id, ctx.season.id, ctx.season.config);
+
+  revalidatePath("/dashboard");
+  return result.ok ? { ok: result.message } : { error: result.message };
+}
+
+export async function confirmRebuy(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const rebuyId = String(formData.get("rebuyId") ?? "");
+  const reference = String(formData.get("reference") ?? "").trim() || null;
+
+  const { confirmRebuyPayment } = await import("@/lib/rebuy-flow");
+  const result = await confirmRebuyPayment(rebuyId, user.id, season.id, season.config, reference);
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  return result.ok ? { ok: result.message } : { error: result.message };
+}
+
+// ---------------------------------------------------------------- split vote
+
+export async function proposeSplit(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ctx = await myEntry();
+  if (!ctx) return { error: "Sign in first." };
+
+  const { survivorsFor, openProposal } = await import("@/lib/splits");
+  const survivors = await survivorsFor(ctx.season.id);
+
+  const allocations = survivors.map((s) => ({
+    entryId: s.entryId,
+    amountCents: Math.round(Number(formData.get(`amount-${s.entryId}`) ?? 0) * 100),
+  }));
+
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  // Closes when the next week begins; falls back to seven days if the schedule
+  // for the next week has not been loaded yet (D19a).
+  const { loadSlate } = await import("@/lib/slate");
+  const nextWeek = await loadSlate(ctx.season.id, (ctx.season.currentWeek ?? 1) + 1, ctx.season.config);
+  const closesAt = nextWeek?.startsAt ?? new Date(Date.now() + 7 * 86_400_000);
+
+  const result = await openProposal(
+    ctx.season.id,
+    ctx.entry.id,
+    ctx.season.currentWeek ?? 1,
+    allocations,
+    note,
+    closesAt,
+  );
+
+  revalidatePath("/split");
+  return result.ok
+    ? { ok: "Proposal opened. Everyone still alive has to agree, and silence counts as no." }
+    : { error: result.message };
+}
+
+export async function voteOnSplit(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ctx = await myEntry();
+  if (!ctx) return { error: "Sign in first." };
+
+  const proposalId = String(formData.get("proposalId") ?? "");
+  const response = String(formData.get("response") ?? "no") === "yes" ? "yes" : "no";
+
+  const { castBallot, settleProposal } = await import("@/lib/splits");
+  const result = await castBallot(proposalId, ctx.entry.id, response);
+  if (!result.ok) return { error: result.message };
+
+  // A yes may have completed unanimity; settling immediately avoids leaving the
+  // season in a decided-but-unrecorded state.
+  if (response === "yes") await settleProposal(ctx.season.id);
+
+  revalidatePath("/split");
+  revalidatePath("/dashboard");
+  return { ok: result.message };
+}
+
+// ---------------------------------------------------------------- reminders
+
+export async function sendReminder(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? 1);
+  const requestHeaders = await headers();
+  const origin =
+    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const { sendWeeklyReminder } = await import("@/lib/reminders");
+  const report = await sendWeeklyReminder(season.id, season.name, weekNumber, season.config, origin);
+
+  revalidatePath("/admin");
+  if (report.skippedReason) return { error: report.skippedReason };
+  return {
+    ok: `Sent ${report.sent} reminder(s)${report.failed ? `, ${report.failed} failed` : ""}. Locally these are written to ./tmp/mail.`,
+  };
+}

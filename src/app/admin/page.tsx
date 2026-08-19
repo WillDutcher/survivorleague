@@ -4,8 +4,10 @@ import { currentUser } from "@/lib/auth";
 import { listInvites } from "@/lib/invites";
 import { currentSeason, formatMoney, listEntries, seasonPotCents } from "@/lib/season";
 import { tierConfig } from "@/rules/config";
+import { rebuysAwaitingPayment } from "@/lib/rebuy-flow";
 import { LogoToggle, SyncControl } from "./display-controls";
-import { WeekControls } from "./week-controls";
+import { RebuyRow } from "./rebuy-row";
+import { ReminderControl, WeekControls } from "./week-controls";
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
 
@@ -38,6 +40,8 @@ export default async function AdminPage() {
   const entries = await listEntries(season.id);
   const pot = await seasonPotCents(season.id);
   const invites = await listInvites(season.id);
+  const pendingRebuys = await rebuysAwaitingPayment(season.id);
+  const entryNameById = new Map(entries.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
 
   const awaiting = entries.filter((e) => e.amountOwedCents > 0);
   const active = entries.filter((e) => e.status === "active");
@@ -115,6 +119,39 @@ export default async function AdminPage() {
       </div>
 
       <div className="card">
+        <h2 style={{ marginTop: 0 }}>Rebuys awaiting payment</h2>
+        <p className="muted">
+          These players chose to buy back in. They are NOT active again until you confirm the money
+          arrived — confirming is what reactivates them and grows the pot.
+        </p>
+        {pendingRebuys.length === 0 ? (
+          <p className="status-ok"> No rebuy payments outstanding.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Player</th>
+                <th scope="col">Lost</th>
+                <th scope="col">Owed</th>
+                <th scope="col">Confirm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingRebuys.map((r) => (
+                <RebuyRow
+                  key={r.rebuyId}
+                  rebuyId={r.rebuyId}
+                  name={entryNameById.get(r.entryId) ?? "Unknown"}
+                  lossWeek={r.lossWeekNumber}
+                  price={formatMoney(r.priceCents)}
+                />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="card">
         <h2 style={{ marginTop: 0 }}>All entries</h2>
         {entries.length === 0 ? (
           <p className="muted">Nobody has signed up yet.</p>
@@ -169,6 +206,7 @@ export default async function AdminPage() {
           eliminate someone twice.
         </p>
         <WeekControls defaultWeek={season.currentWeek ?? 1} />
+        <ReminderControl defaultWeek={season.currentWeek ?? 1} />
       </div>
 
       <div className="card">

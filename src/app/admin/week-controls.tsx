@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { lockLines, runDefaults, runResults, type FormState } from "@/app/actions";
+import { lockLines, runDefaults, runResults, sendReminder, type FormState } from "@/app/actions";
 
 function Control({
   action,
@@ -32,6 +32,17 @@ function Control({
       {state.error ? <p role="alert" className="status-bad hint"> {state.error}</p> : null}
       {state.ok ? <p role="status" className="status-ok hint"> {state.ok}</p> : null}
     </div>
+  );
+}
+
+export function ReminderControl({ defaultWeek }: { defaultWeek: number }) {
+  return (
+    <Control
+      action={sendReminder}
+      label="Send weekly reminder"
+      defaultWeek={defaultWeek}
+      hint="Emails every active player the slate, the locked lines, and their deadline — and tells anyone owing multiple picks that they do. Sends once per week; a second attempt is refused rather than double-mailing fifty people."
+    />
   );
 }
 

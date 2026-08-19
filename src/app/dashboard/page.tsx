@@ -5,6 +5,8 @@ import { currentSeason, entryForUser, formatMoney, seasonPotCents } from "@/lib/
 import { canIssueInvites } from "@/lib/invites";
 import { tierConfig } from "@/rules/config";
 import { LEAGUE } from "@/lib/league";
+import { openRebuyFor } from "@/lib/rebuy-flow";
+import { RebuyPanel } from "./rebuy-panel";
 import { InviteButton } from "./invite-button";
 import { SignOutButton } from "./sign-out-button";
 
@@ -30,6 +32,7 @@ export default async function Dashboard() {
   const pot = await seasonPotCents(season.id);
   const mayInvite = await canIssueInvites(user.id, season.id);
   const tier = entry ? tierConfig(season.config, entry.tier) : null;
+  const rebuy = entry ? await openRebuyFor(entry.id) : null;
 
   return (
     <>
@@ -45,6 +48,19 @@ export default async function Dashboard() {
         </div>
         <SignOutButton />
       </div>
+
+      {rebuy ? (
+        <RebuyPanel
+          rebuyId={rebuy.id}
+          kind={rebuy.kind}
+          price={formatMoney(rebuy.priceCents)}
+          lossWeek={rebuy.lossWeekNumber}
+          remaining={entry?.includedRebuysRemaining ?? 0}
+          paypal={LEAGUE.paypalAddress}
+          transferType={LEAGUE.paypalTransferType}
+          playerName={`${user.firstName} ${user.lastName}`}
+        />
+      ) : null}
 
       {/* The unpaid banner is the whole point of D9: the app does the nagging. */}
       {entry && entry.amountOwedCents > 0 ? (
@@ -170,6 +186,10 @@ export default async function Dashboard() {
 
       <p className="muted">
         <Link href="/week">This week&rsquo;s games</Link>
+        {" · "}
+        <Link href="/standings">Standings</Link>
+        {" · "}
+        <Link href="/split">Split the pot</Link>
         {" · "}
         <Link href="/rules">League rules and terms</Link>
         {user.isAdmin ? (
