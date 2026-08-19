@@ -16,3 +16,6 @@ tsconfig.tsbuildinfo
 
 # Local mail capture
 tmp/
+
+# Next.js regenerates this, and its contents differ between dev and build
+next-env.d.ts
