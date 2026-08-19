@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * invite-only, so there is no dead end and no misleading "sign up" affordance
  * for someone without a link.
  *
- * Environment diagnostics live at /setup.
+ * Environment diagnostics live at /status.
  */
 export default async function Home() {
   const user = await currentUser();

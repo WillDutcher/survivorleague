@@ -52,7 +52,11 @@ export default async function AdminPage() {
             registration {season.registrationOpen ? "open" : "closed"}
           </p>
         </div>
-        <Link href="/dashboard">Back to my dashboard</Link>
+        <p className="muted" style={{ margin: 0 }}>
+          <Link href="/dashboard">My dashboard</Link>
+          {" · "}
+          <Link href="/status">Environment status</Link>
+        </p>
       </div>
 
       <div className="stat-row">
