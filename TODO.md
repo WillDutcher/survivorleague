@@ -44,7 +44,8 @@ brush the daily cap.
 
 - [ ] **W** — Once forwarding is confirmed, change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players never see the personal address
 - [ ] **C** — Optional later: Gmail "Send mail as" via Resend SMTP, so replies also go *out* as commissioner@
-- [ ] **W** — Create Neon project, put connection string in `.env.local`
+- [x] **W** — Neon project created (US East 1, PG 17.11 to match local) and `PRODUCTION_DATABASE_URL` set
+- [x] **C** — Migrations applied to Neon; 23 tables and the key constraints verified present, database empty
 - [ ] **W** — Create Vercel account, upgrade to Pro (per-minute cron)
 - [ ] **W** — Run `npm run demo`, sign in as several players, report what confused you
 - [ ] **C** — Deploy to Vercel + Neon, verify migrations run against managed Postgres
