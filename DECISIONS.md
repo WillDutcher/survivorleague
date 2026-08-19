@@ -307,6 +307,35 @@ Commissioner's worked cases, all consistent with the formula:
 - Home page is a setup-status check that names the exact command to fix whatever is missing.
 - Verified working 2026-08-18: Postgres 17.11, 18 tables migrated, app boots, 96 tests green.
 
+## D24 - Auth built on Node crypto, not an auth library
+**Decision (made by Claude, delegated):** Email+password with server-side sessions, implemented directly on Node's built-in crypto rather than Better Auth.
+**Rationale:** the schema already carried `passwordHash`; the surface is small and well understood; one fewer dependency in the auth path is one fewer thing to break or be compromised two weeks before kickoff. ARCHITECTURE.md originally proposed Better Auth - this supersedes it.
+**Hazards explicitly handled** (hand-rolled auth is where people get hurt):
+- scrypt with per-user random salt; passwords never reversible, never logged.
+- `timingSafeEqual` for all secret comparisons, so response timing cannot leak a hash or token.
+- Session cookie holds a 32-byte random token; only its SHA-256 hash is stored. A database leak yields no usable sessions.
+- Cookies httpOnly, sameSite=lax, secure in production.
+- Login throttled per email: 8 failures in 15 minutes locks further attempts.
+- Failed logins return an identical message whether or not the address exists, so the endpoint cannot enumerate league membership.
+**Reversible:** swapping to a library later touches only `src/lib/auth.ts`.
+
+## D25 - First account becomes commissioner
+**Decision (made by Claude, delegated):** The first user to sign up is granted admin. Every account after that is a normal player.
+**Rationale:** solves bootstrap without a hardcoded password or a manual database edit. Admin is granted explicitly thereafter, so a shared bootstrap link cannot mint more commissioners.
+
+## D26 - Seed script mints the bootstrap invite
+**Decision (made by Claude, delegated):** `npm run seed` creates the season and prints a 25-use, 90-day signup URL. `npm run seed -- practice` seeds a practice season instead (D12).
+**Rationale:** signup requires an invite, invites come from confirmed players, and at the start there are none. Safe to re-run; never duplicates a season and always mints a fresh way back in.
+
+## D27 - Validation order protects invite uses
+**Decision (made by Claude, delegated):** All validation - including the 18+ age gate - runs BEFORE the invite is consumed.
+**Rationale:** a rejected signup must not burn a single-use invite. Verified: an under-18 attempt left uses at 0 and created no user.
+**Also:** invite consumption is a single atomic UPDATE carrying `uses < max_uses` in its WHERE clause, so two people racing for the last use of a link cannot both succeed.
+
+## D28 - Password policy is length-only
+**Decision (made by Claude, delegated):** Minimum 10 characters, no character-class requirements.
+**Rationale:** length beats symbol gymnastics for real security, and complexity rules are what make fifty casual players give up during the one week that matters.
+
 ---
 
 ## Open questions
