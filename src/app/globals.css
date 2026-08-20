@@ -18,6 +18,13 @@
   --ok: #14532d;
   --radius: 10px;
   --focus: #1d4ed8;
+  /* Result markers. Paired bg/fg so the letter stays legible in both themes. */
+  --ok-bg: #dcfce7;
+  --ok-fg: #14532d;
+  --bad-bg: #fee2e2;
+  --bad-fg: #7f1d1d;
+  --warn-bg: #fef3c7;
+  --warn-fg: #78350f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,6 +39,12 @@
     --danger: #fca5a5;
     --ok: #4ade80;
     --focus: #93c5fd;
+    --ok-bg: #14532d;
+    --ok-fg: #dcfce7;
+    --bad-bg: #7f1d1d;
+    --bad-fg: #fee2e2;
+    --warn-bg: #78350f;
+    --warn-fg: #fef3c7;
   }
 }
 
@@ -728,8 +741,14 @@ button[disabled] {
   max-width: 22rem;
 }
 
+/*
+ * No `display` here on purpose. This selector outranks `.teams-used
+ * .pick-chip` (0,2,1 vs 0,2,0), so setting display:inline-block here silently
+ * beat the chip's own inline-flex and collapsed its gap — the week label ran
+ * straight into the team logo. Layout for these items belongs to .pick-chip.
+ */
 .teams-used .pick-history li {
-  display: inline-block;
+  margin: 0;
 }
 
 /* ---------------------------------------------------------------- team tags */
@@ -777,9 +796,80 @@ button[disabled] {
   gap: 0.25rem;
 }
 
-/* History entries pair a week label and an outcome around the tag. */
+/*
+ * A history entry: week label, team tag, result.
+ *
+ * The three parts are laid out on a fixed grid rather than flowed, so the tags
+ * line up in a column down the list instead of shifting with the width of each
+ * week label.
+ */
 .teams-used .pick-chip {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 1.4rem;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
+  padding: 0.2rem 0.4rem;
+  width: 100%;
+}
+
+/*
+ * Hug the label instead of filling the column. Grid items stretch by default,
+ * which turned the colour chips into full-width bars and made the two display
+ * modes look like different components. The tag's own min-width still keeps
+ * the column aligned.
+ */
+.teams-used .pick-chip > .team-tag {
+  justify-self: start;
+}
+
+.teams-used .pick-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 15rem;
+}
+
+.pick-week {
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+/*
+ * Result marker. The LETTER is the signal — W, L, T — and the colour only
+ * reinforces it, so this still reads correctly in greyscale or with colour
+ * vision deficiency.
+ */
+.pick-result {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 3px;
+  padding: 0.05rem 0;
+}
+
+.pick-result-win {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.pick-result-loss {
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+}
+
+.pick-result-tie {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+/* Not played yet: hold the column so the grid stays aligned. */
+.pick-result-pending {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* An auto-assigned pick is marked, since people ask why they got it. */
+.pick-auto {
+  font-size: 0.68rem;
+  color: var(--muted);
 }

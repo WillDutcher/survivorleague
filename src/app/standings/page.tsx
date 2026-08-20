@@ -168,6 +168,33 @@ function PickTag({ pick, showLogo }: { pick: StandingPick; showLogo: boolean }) 
   return <TeamTag team={pick.team} showLogo={showLogo} />;
 }
 
+/**
+ * W / L / T for a graded pick, or a dash while the game is unplayed.
+ *
+ * The letter carries the meaning and the colour only reinforces it, so this
+ * survives greyscale, colour blindness, and a screen reader — which gets the
+ * full word from the accessible label rather than the initial.
+ */
+function PickResult({ outcome, auto }: { outcome: string; auto: boolean }) {
+  const map: Record<string, { letter: string; word: string; cls: string }> = {
+    win: { letter: "W", word: "Won", cls: "pick-result-win" },
+    loss: { letter: "L", word: "Lost", cls: "pick-result-loss" },
+    tie: { letter: "T", word: "Tied", cls: "pick-result-tie" },
+    pending: { letter: "–", word: "Not played yet", cls: "pick-result-pending" },
+  };
+  const r = map[outcome] ?? map.pending!;
+
+  return (
+    <span className={`pick-result ${r.cls}`} title={auto ? `${r.word} · auto-assigned` : r.word}>
+      <span aria-hidden="true">{r.letter}</span>
+      <span className="sr-only">
+        {r.word}
+        {auto ? ", auto-assigned pick" : ""}
+      </span>
+    </span>
+  );
+}
+
 function PlayerRow({
   row,
   seasonType,
@@ -248,18 +275,9 @@ function TeamsUsed({
       <ul className="pick-history">
         {row.history.map((h) => (
           <li key={`${h.week}-${h.teamId}`} className="pick-chip">
-            <span className="muted">{weekLabelShort(seasonType, h.week)}</span>
+            <span className="muted pick-week">{weekLabelShort(seasonType, h.week)}</span>
             <PickTag pick={h} showLogo={showLogos} />
-            <span>
-              {h.outcome === "win"
-                ? "✓ won"
-                : h.outcome === "loss"
-                  ? "✕ lost"
-                  : h.outcome === "tie"
-                    ? "= tied"
-                    : ""}
-              {h.source === "default" ? " (auto)" : ""}
-            </span>
+            <PickResult outcome={h.outcome} auto={h.source === "default"} />
           </li>
         ))}
       </ul>
