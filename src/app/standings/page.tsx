@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { currentSeason, formatMoney, seasonPotCents } from "@/lib/season";
 import { loadStandings, teamsRemaining, type StandingPick, type StandingRow } from "@/lib/standings";
 import { TeamTag } from "@/app/team-tag";
+import { NudgeButton } from "./nudge-button";
 import { weekLabel, weekLabelShort } from "@/rules/weeks";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function StandingsPage() {
   const alive = rows.filter((r) => r.status === "active" || r.status === "rebuy_pending");
   const out = rows.filter((r) => r.status === "eliminated" || r.status === "settled");
   const notIn = rows.filter((r) => r.status === "registered" || r.status === "paid");
+  const missing = rows.filter((r) => r.needsPick).length;
 
   return (
     <>
@@ -56,6 +58,10 @@ export default async function StandingsPage() {
           <span className="stat-value">{out.length}</span>
           <span className="stat-label">Out</span>
         </div>
+        <div className={missing > 0 ? "stat stat-alert" : "stat"}>
+          <span className="stat-value">{missing}</span>
+          <span className="stat-label">No pick yet</span>
+        </div>
         {season.mode !== "practice" ? (
           <div className="stat">
             <span className="stat-value">{formatMoney(pot)}</span>
@@ -63,6 +69,20 @@ export default async function StandingsPage() {
           </div>
         ) : null}
       </div>
+
+      {user.isAdmin ? (
+        <div className="card nudge-card">
+          <div>
+            <strong>Chase missing picks</strong>
+            <p className="muted hint" style={{ margin: 0 }}>
+              Emails only the players still short for {weekLabel(season.seasonType, currentWeek)},
+              with a link straight to the pick page. Safe to press more than once — it re-checks
+              who is short each time.
+            </p>
+          </div>
+          <NudgeButton weekNumber={currentWeek} missing={missing} />
+        </div>
+      ) : null}
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Alive</h2>
@@ -205,7 +225,7 @@ function PlayerRow({
   showLogos: boolean;
 }) {
   return (
-    <tr>
+    <tr className={row.needsPick ? "row-needs-pick" : undefined}>
       <td>{row.name}</td>
       <td>{row.tierLabel}</td>
       <td className="muted">{row.rebuyLabel}</td>
@@ -236,6 +256,13 @@ function PlayerRow({
           // Made but not revealed. Saying so is the point: it is not the same
           // as having made no pick.
           <span className="muted">Pick made — hidden until kickoff</span>
+        ) : row.needsPick ? (
+          // The state the commissioner is actually hunting for. Marked with a
+          // word and a shape, never colour alone.
+          <span className="needs-pick">
+            ⚠ No pick yet
+            {row.picksOutstanding > 1 ? ` — owes ${row.picksOutstanding}` : ""}
+          </span>
         ) : (
           <span className="muted">No pick yet</span>
         )}

@@ -767,6 +767,42 @@ export async function sendReminder(_prev: FormState, formData: FormData): Promis
   };
 }
 
+/**
+ * Nudge only the players who still owe a pick this week.
+ *
+ * Separate from sendReminder, which goes to everyone once per week by run key.
+ * This is the follow-up: it recomputes who is short at press time, so pressing
+ * it twice never mails someone who has picked in the meantime.
+ */
+export async function nudgeMissing(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const weekNumber = Number(formData.get("weekNumber") ?? season.currentWeek ?? 1);
+  const requestHeaders = await headers();
+  const origin =
+    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const { nudgeMissingPicks } = await import("@/lib/reminders");
+  const report = await nudgeMissingPicks(
+    season.id,
+    season.name,
+    weekNumber,
+    season.config,
+    origin,
+    season.seasonType,
+  );
+
+  revalidatePath("/standings");
+  revalidatePath("/admin");
+  if (report.skippedReason) return { error: report.skippedReason };
+  return {
+    ok: `Nudged ${report.sent} player(s) who had not picked${report.failed ? `, ${report.failed} failed` : ""}.`,
+  };
+}
+
 // ---------------------------------------------------------------- verification
 
 export async function resendVerification(_prev: FormState, _data: FormData): Promise<FormState> {

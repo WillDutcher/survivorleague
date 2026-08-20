@@ -873,3 +873,45 @@ button[disabled] {
   font-size: 0.68rem;
   color: var(--muted);
 }
+
+/* ------------------------------------------------- missing picks */
+
+/*
+ * The state the commissioner is hunting for before a deadline.
+ *
+ * Marked three ways — a symbol, the words "No pick yet", and a tinted row —
+ * so it survives greyscale and colour vision deficiency. The tint alone is
+ * never the signal.
+ */
+.needs-pick {
+  font-weight: 700;
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+}
+
+.row-needs-pick > td {
+  background: var(--bad-bg);
+}
+
+.stat-alert {
+  border-color: var(--danger);
+  border-width: 2px;
+}
+
+.nudge-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.nudge-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

@@ -50,6 +50,14 @@ export interface StandingRow {
   currentPicks: StandingPick[];
   /** True when a pick exists for this week but its game has not started. */
   currentPickHidden: boolean;
+  /**
+   * Still owes picks this week. Counts against requiredPicks, which a tie
+   * raises above one — someone who owes two and has made one is still short.
+   * Always false for entries that cannot pick at all.
+   */
+  needsPick: boolean;
+  /** How many are still outstanding. */
+  picksOutstanding: number;
 }
 
 export interface StandingsOptions {
@@ -178,6 +186,11 @@ export async function loadStandings(
       history: started.sort((a, b) => a.week - b.week).map(toPick),
       usedTeamCount: mine.length,
       currentPicks: thisWeekVisible.map(toPick),
+      // Counted from ALL of this week's picks, not the visible ones: whether
+      // someone has picked is not a secret, only which team they took.
+      needsPick: row.status === "active" && thisWeek.length < row.requiredPicks,
+      picksOutstanding:
+        row.status === "active" ? Math.max(0, row.requiredPicks - thisWeek.length) : 0,
       // A pick exists but its game has not started: say so, rather than leaving
       // it blank and indistinguishable from having made no pick at all.
       currentPickHidden: thisWeek.length > 0 && thisWeekStarted.length === 0,
