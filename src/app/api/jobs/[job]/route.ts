@@ -21,6 +21,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/origin";
 import { timingSafeEqual } from "node:crypto";
 
 export const dynamic = "force-dynamic";
@@ -89,7 +90,7 @@ async function runJob(
     return NextResponse.json({ error: "No active season." }, { status: 409 });
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = publicOrigin(new URL(request.url).origin);
   const week = season.currentWeek ?? 1;
 
   try {

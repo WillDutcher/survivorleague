@@ -323,7 +323,9 @@ async function main() {
   console.log("=".repeat(70));
   console.log("  PRESEASON REHEARSAL READY");
   console.log("=".repeat(70));
-  console.log(`\n  Sign in at https://survivorleague-mu.vercel.app/login`);
+  const base =
+    process.env.PUBLIC_BASE_URL?.replace(/\/+$/, "") || "https://novasurvivorleague.com";
+  console.log(`\n  Sign in at ${base}/login`);
   console.log(`  Password for EVERY test account: ${PASSWORD}\n`);
   console.log("  account                        tier  rebuys  picked");
   console.log("  " + "-".repeat(58));

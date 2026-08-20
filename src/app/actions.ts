@@ -12,6 +12,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { publicOrigin } from "@/lib/origin";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { auditEvents, entries, payments, seasons, users } from "@/db/schema";
@@ -159,7 +160,9 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   // never undo a completed signup.
   try {
     const origin =
-      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+      publicOrigin(
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+    );
     const { sendVerificationEmail } = await import("@/lib/verification");
     await sendVerificationEmail(userId, origin);
   } catch {
@@ -461,9 +464,9 @@ export async function requestPasswordReset(
   if (!reset) return { ok: sameAnswerEitherWay };
 
   const requestHeaders = await headers();
-  const origin =
-    requestHeaders.get("origin") ??
-    `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+  const origin = publicOrigin(
+    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+  );
   const link = `${origin}/reset/${reset.token}`;
 
   const { sendEmail } = await import("@/lib/mail");
@@ -763,7 +766,9 @@ export async function sendReminder(_prev: FormState, formData: FormData): Promis
   const weekNumber = Number(formData.get("weekNumber") ?? 1);
   const requestHeaders = await headers();
   const origin =
-    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+    publicOrigin(
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+    );
 
   const { sendWeeklyReminder } = await import("@/lib/reminders");
   const report = await sendWeeklyReminder(
@@ -798,7 +803,9 @@ export async function nudgeMissing(_prev: FormState, formData: FormData): Promis
   const weekNumber = Number(formData.get("weekNumber") ?? season.currentWeek ?? 1);
   const requestHeaders = await headers();
   const origin =
-    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+    publicOrigin(
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+    );
 
   const { nudgeMissingPicks } = await import("@/lib/reminders");
   const report = await nudgeMissingPicks(
@@ -941,7 +948,9 @@ export async function resendVerification(_prev: FormState, _data: FormData): Pro
 
   const requestHeaders = await headers();
   const origin =
-    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+    publicOrigin(
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+    );
 
   const { sendVerificationEmail } = await import("@/lib/verification");
   const result = await sendVerificationEmail(user.id, origin);
@@ -971,7 +980,9 @@ export async function runPaymentReminders(_prev: FormState, _data: FormData): Pr
 
   const requestHeaders = await headers();
   const origin =
-    requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+    publicOrigin(
+      requestHeaders.get("origin") ?? `http://${requestHeaders.get("host") ?? "localhost:3000"}`,
+    );
 
   const { loadSlate } = await import("@/lib/slate");
   const slate = await loadSlate(season.id, season.currentWeek ?? 1, season.config);

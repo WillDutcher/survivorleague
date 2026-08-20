@@ -310,6 +310,29 @@ npx tsx --env-file=.env.local scripts/verify-results.ts
 `vercel.json`. Vercel Pro is required because the free tier caps cron at once per
 day. See `ARCHITECTURE.md`.
 
+### Putting it on novasurvivorleague.com
+
+Vercel serves the app; Cloudflare holds the DNS. They coexist because they use
+different record types — web traffic is A/CNAME, email is MX, and adding one
+does not disturb the other. Existing Email Routing and Resend records are safe.
+
+1. Vercel → the project → **Settings → Domains** → add `novasurvivorleague.com`
+   and `www.novasurvivorleague.com`.
+2. Vercel shows the DNS records it wants — an `A` record for the root and a
+   `CNAME` for `www`.
+3. Cloudflare → the domain → **DNS → Records** → add exactly those.
+   **Set the proxy to "DNS only" (grey cloud), not proxied (orange).** Cloudflare
+   proxying in front of Vercel's own TLS causes redirect loops.
+4. Wait for Vercel to verify and issue the certificate. Usually minutes.
+5. Vercel → **Settings → Environment Variables** → set
+   `PUBLIC_BASE_URL=https://novasurvivorleague.com`, then redeploy.
+
+Step 5 is not optional. Vercel Cron calls the deployment's own `*.vercel.app`
+hostname, so without it every scheduled email — reminders, the Sunday digest,
+the Monday recap — would link players to a URL they have never seen. With it
+set, every link in every email uses the real domain regardless of what triggered
+it.
+
 ### What runs by itself, and the one thing that does not
 
 Everything a player touches, and every scheduled job, runs on Vercel with no
