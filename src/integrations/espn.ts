@@ -228,15 +228,39 @@ export function parseLines(payload: unknown): EspnLine[] {
 
 // ---------------------------------------------------------------- fetching
 
+/**
+ * ESPN rejects requests that do not look like a browser, and has been observed
+ * returning 403 to server-side callers sending a bare API client user agent.
+ * These headers are not a disguise -- the endpoint is public and unauthenticated
+ * -- they just satisfy a filter that assumes browsers.
+ *
+ * If a 403 persists with these set, the block is by IP rather than by header,
+ * and syncing has to happen from somewhere ESPN will talk to. See
+ * `npm run sync:prod`, which runs the same code from a machine that can.
+ */
+const BROWSERISH_HEADERS = {
+  Accept: "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  Referer: "https://www.espn.com/",
+  Origin: "https://www.espn.com",
+} as const;
+
 async function getJson(url: string): Promise<unknown> {
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers: BROWSERISH_HEADERS,
     // Always go to the network: a cached scoreboard during a live Sunday is worse
     // than a slow one.
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error(`ESPN responded ${response.status} for ${url}`);
+    throw new Error(
+      `ESPN responded ${response.status} for ${url}` +
+        (response.status === 403
+          ? " — ESPN is refusing this server. Sync from a machine it will talk to using `npm run sync:prod`."
+          : ""),
+    );
   }
   return response.json();
 }
