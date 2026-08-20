@@ -376,14 +376,15 @@ export default async function FaqPage() {
           a: (
             <>
               <p>
-                Other players&apos; picks appear once <strong>their game kicks off</strong>, not
-                when picks lock. Somebody on the Monday night game stays hidden through all of
-                Sunday.
+                Everyone&apos;s picks appear once <strong>picks lock</strong> — 12:55 on Sunday
+                for the whole slate, earlier for a team playing before then. A Monday night pick
+                locks Sunday along with everything else, so it is visible then too.
               </p>
               <p>
-                The standings do show whether someone <em>has</em> picked — &ldquo;pick made,
-                hidden until kickoff&rdquo; is deliberately different from &ldquo;no pick
-                yet&rdquo;. You can see who is dragging their feet without seeing their hand.
+                Before then, standings still show whether someone <em>has</em> picked —
+                &ldquo;pick made, hidden until it locks&rdquo; is deliberately different from
+                &ldquo;no pick yet&rdquo;. You can see who is dragging their feet without seeing
+                their hand.
               </p>
             </>
           ),

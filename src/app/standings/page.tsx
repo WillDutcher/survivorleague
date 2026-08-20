@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 /**
  * Who is alive, and everything the league can fairly see about them.
  *
- * A player's pick for the current week appears only once its game has kicked
- * off. Until then it shows as made-but-hidden, which is deliberately different
- * from showing nothing — "hasn't picked" and "picked, not revealed" are
- * different facts.
+ * A player's pick for the current week appears once it locks — Sunday 12:55 for
+ * the whole slate, earlier for a team playing before then. Until then it shows
+ * as made-but-hidden, which is deliberately different from showing nothing:
+ * "hasn't picked" and "picked, not revealed" are different facts.
  *
  * The commissioner sees every pick immediately, marked as not-yet-public, so
  * they can chase missing picks and catch bad ones before kickoff.
@@ -100,7 +100,7 @@ export default async function StandingsPage() {
                   <th scope="col">
                     This week
                     <span className="th-note">
-                      {user.isAdmin ? "commissioner view — all picks" : "shown once the game starts"}
+                      {user.isAdmin ? "commissioner view — all picks" : "shown once picks lock"}
                     </span>
                   </th>
                   <th scope="col">Teams used</th>
@@ -255,7 +255,7 @@ function PlayerRow({
         ) : row.currentPickHidden ? (
           // Made but not revealed. Saying so is the point: it is not the same
           // as having made no pick.
-          <span className="muted">Pick made — hidden until kickoff</span>
+          <span className="muted">Pick made — hidden until it locks</span>
         ) : row.needsPick ? (
           // The state the commissioner is actually hunting for. Marked with a
           // word and a shape, never colour alone.

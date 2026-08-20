@@ -462,3 +462,21 @@ Every override writes an audit row with the before state, the after state, and a
 required free-text reason, and the pick is stamped `source: commissioner` so it
 can never be mistaken for the player's own choice or an automatic default.
 
+## D45 — Picks are revealed when they lock, not when their game starts
+
+**Decided 2026-08-19.** Supersedes the kickoff-based rule built earlier the same day.
+
+Every pick for a week locks at the Sunday deadline at the latest: `lockTimeFor`
+takes the earlier of the deadline and five minutes before kickoff, so a Monday
+night pick locks Sunday 12:55 along with the rest of the slate.
+
+The reason to hide a pick is to stop other people reacting to it. Once locked
+nobody can react, so there is nothing left to protect. Holding a Monday pick
+until Monday night also contradicted the Sunday 1 PM digest, which mails the
+whole locked slate to every player — hiding it on the site while emailing it to
+fifty people is theatre.
+
+A pick that is made but not yet locked still shows AS MADE. "Hidden" and "has
+not picked" remain different facts, which is what lets the commissioner chase
+missing picks without seeing anyone's hand.
+

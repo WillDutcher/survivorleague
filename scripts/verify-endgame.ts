@@ -254,9 +254,9 @@ async function main() {
 
   const standings = await loadStandings(seasonId, 4, config);
   const daveRow = standings.find((r) => r.entryId === dave.entryId)!;
-  // The reveal is tied to KICKOFF, not to the pick locking. A Monday-night pick
-  // locks Sunday but must stay hidden until the game actually starts.
-  check("a pick whose game has not started is NOT shown", daveRow.history.length === 0);
+  // The reveal is tied to the pick LOCKING. Every pick for a week locks at the
+  // Sunday deadline at the latest, so nothing stays hidden past it.
+  check("an unlocked pick is NOT shown", daveRow.history.length === 0);
   check("and its current pick is withheld", daveRow.currentPicks.length === 0);
   check("but it is flagged as made-and-hidden", daveRow.currentPickHidden);
 
@@ -270,7 +270,7 @@ async function main() {
   // The commissioner is exempt from the hold.
   const asAdmin = await loadStandings(seasonId, 4, config, { revealAll: true });
   const daveAdmin = asAdmin.find((r) => r.entryId === dave.entryId)!;
-  check("the commissioner sees the pick before kickoff", daveAdmin.currentPicks[0]?.teamId === "PHI",
+  check("the commissioner sees the pick before it locks", daveAdmin.currentPicks[0]?.teamId === "PHI",
     String(daveAdmin.currentPicks[0]?.teamId));
   check("and the pick carries its team colours for display",
     Boolean(daveAdmin.currentPicks[0]?.team?.colorPrimary),
@@ -278,11 +278,10 @@ async function main() {
   check("and it is still marked not-public", daveAdmin.currentPickHidden);
   check("and it appears in their history view", daveAdmin.history.length === 1);
 
-  // Move the GAME into the past, not the pick's lock time.
-  await db.update(games).set({ kickoff: new Date(Date.now() - 1000) }).where(eq(games.id, g!.id));
-  const afterKickoff = await loadStandings(seasonId, 4, config);
-  const daveVisible = afterKickoff.find((r) => r.entryId === dave.entryId)!;
-  check("once the game starts the pick becomes visible", daveVisible.history.length === 1,
+  await db.update(picks).set({ lockAt: new Date(Date.now() - 1000) }).where(eq(picks.entryId, dave.entryId));
+  const afterLock = await loadStandings(seasonId, 4, config);
+  const daveVisible = afterLock.find((r) => r.entryId === dave.entryId)!;
+  check("once it locks the pick becomes visible", daveVisible.history.length === 1,
     daveVisible.history.map((h) => h.teamId).join(","));
   check("and it shows as this week's pick", daveVisible.currentPicks[0]?.teamId === "PHI",
     String(daveVisible.currentPicks[0]?.teamId));
