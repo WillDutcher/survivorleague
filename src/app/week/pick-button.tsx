@@ -24,6 +24,7 @@ export function PickButton({
   disabled,
   reason,
   locked,
+  entryBlocked = false,
 }: {
   team: TeamDisplay;
   weekNumber: number;
@@ -32,6 +33,8 @@ export function PickButton({
   disabled: boolean;
   reason: string | null;
   locked: boolean;
+  /** The entry, not this team, is why nothing can be picked. */
+  entryBlocked?: boolean;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(choosePick, {});
 
@@ -68,9 +71,12 @@ export function PickButton({
               ? locked
                 ? "✓ Your pick — locked"
                 : "✓ Your pick — tap to remove"
-              : disabled
-                ? "Unavailable"
-                : "Pick"}
+              : entryBlocked
+                ? // Not the team's fault. The banner above says what is.
+                  "Not open to you"
+                : disabled
+                  ? "Unavailable"
+                  : "Pick"}
         </span>
       </button>
 

@@ -22,7 +22,7 @@
  * risks everyone winning or everyone losing, which tests nothing.
  */
 
-import { and, eq, like } from "drizzle-orm";
+import { and, eq, like, notLike } from "drizzle-orm";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "../src/db/schema";
@@ -286,6 +286,38 @@ async function main() {
     });
   }
 
+  // Enroll the real accounts too. A rehearsal the commissioner cannot play in
+  // is not a rehearsal — without this the season switches over and every team
+  // greys out, because the live-season entry does not carry across.
+  const realUsers = await db
+    .select({ id: users.id, email: users.email, first: users.firstName, last: users.lastName })
+    .from(users)
+    .where(notLike(users.email, `%@${EMAIL_DOMAIN}`));
+
+  const enrolled: string[] = [];
+  for (const u of realUsers) {
+    // Mirror whatever tier they bought into for real, so the rehearsal exercises
+    // the rules that will actually apply to them.
+    const [live] = await db
+      .select({ tier: entries.tier })
+      .from(entries)
+      .innerJoin(seasons, eq(seasons.id, entries.seasonId))
+      .where(and(eq(entries.userId, u.id), eq(seasons.mode, "live")))
+      .limit(1);
+    const tier = live?.tier ?? "EIGHTY";
+
+    await db.insert(entries).values({
+      userId: u.id,
+      seasonId,
+      tier,
+      // Practice mode: no payment gate, so nobody sits inactive.
+      status: "active",
+      requiredPicks: 1,
+      includedRebuysRemaining: tier === "EIGHTY" ? 3 : 0,
+    });
+    enrolled.push(`${u.first} ${u.last} <${u.email}> ${tier === "EIGHTY" ? "$80" : "$20"}`);
+  }
+
   const onHome = created.filter((c) => c.team === target.homeTeamId).length;
 
   console.log("=".repeat(70));
@@ -302,6 +334,8 @@ async function main() {
   }
   console.log(`\n  ${onHome} picked ${target.homeTeamId}, ${created.length - onHome} picked ${target.awayTeamId}`);
   console.log(`  Whoever wins, the other side loses — so you get survivals AND eliminations.`);
+  console.log(`\n  Real accounts enrolled with an ACTIVE entry (no payment needed):`);
+  for (const e of enrolled) console.log(`    ${e}`);
   console.log(`\n  Your own commissioner account still works and is admin here.`);
   console.log(`  Run  npm run preseason -- clear  to remove it and restore 2026.\n`);
 

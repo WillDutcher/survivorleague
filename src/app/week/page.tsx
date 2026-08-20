@@ -120,12 +120,30 @@ export default async function WeekPage({
       ) : null}
 
       {!canPick ? (
+        // Say which of the two things is actually wrong. "No entry in this
+        // season" and "entry awaiting payment" have different fixes, and a
+        // practice season has no payment to wait on at all.
         <div className="card callout-warning">
-          <p style={{ margin: 0 }}>
-            <strong>Your picks will not count yet.</strong> Your entry becomes active once the
-            commissioner confirms your payment. See{" "}
-            <Link href="/dashboard">your dashboard</Link> for how to pay.
-          </p>
+          {!entry ? (
+            <p style={{ margin: 0 }}>
+              <strong>You are not in this season.</strong> Your account is fine — you just have no
+              entry in {season.name}, so nothing here is selectable.{" "}
+              {user.isAdmin
+                ? "Enroll yourself from commissioner tools, or re-run the preseason script, which now enrolls real accounts automatically."
+                : "Ask the commissioner to add you."}
+            </p>
+          ) : season.mode === "practice" ? (
+            <p style={{ margin: 0 }}>
+              <strong>Your entry is not active.</strong> This is a free rehearsal, so there is
+              nothing to pay — ask the commissioner to activate you.
+            </p>
+          ) : (
+            <p style={{ margin: 0 }}>
+              <strong>Your picks will not count yet.</strong> Your entry becomes active once the
+              commissioner confirms your payment. See{" "}
+              <Link href="/dashboard">your dashboard</Link> for how to pay.
+            </p>
+          )}
         </div>
       ) : (
         <div className="card">
@@ -211,6 +229,10 @@ export default async function WeekPage({
                       disabled={!canPick || (unavailable && !selected)}
                       reason={unavailable && !selected ? (info?.explanation ?? null) : null}
                       locked={locked}
+                      // When the entry itself is the blocker, every team is off
+                      // limits and none of them is the reason. Saying
+                      // "Unavailable" on all 32 reads as a broken schedule.
+                      entryBlocked={!canPick}
                     />
                   );
                 })}
