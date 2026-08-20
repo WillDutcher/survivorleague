@@ -15,6 +15,13 @@ export const dynamic = "force-dynamic";
  *
  * Written in the second person and in plain language on purpose. Somebody
  * reading this is usually mid-panic on a Sunday morning.
+ *
+ * Answers are ALWAYS VISIBLE, never collapsed behind a click. A question alone
+ * is often enough for someone to assume they already know the answer and move
+ * on — "does a rebuy give me my teams back" reads as rhetorical until you see
+ * that it says no. The reasoning is the part that stops the argument later, so
+ * it is not hidden. Ctrl+F also finds answers this way, which it cannot do
+ * inside collapsed elements in some browsers.
  */
 
 interface QA {
@@ -115,7 +122,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "The site says I locked but I swear I submitted in time",
+          q: "What if I submitted in time but the site says I locked?",
           a: (
             <>
               <p>
@@ -153,7 +160,7 @@ export default async function FaqPage() {
       heading: "Ties — the part that confuses everyone",
       items: [
         {
-          q: "My team tied. Am I out?",
+          q: "My team tied — am I out?",
           a: (
             <>
               <p>
@@ -170,7 +177,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "I owed two picks and one of them tied. Now what?",
+          q: "I owed two picks and one of them tied — what do I owe now?",
           a: (
             <>
               <p>
@@ -186,7 +193,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "I owed two picks. One tied and the other lost.",
+          q: "I owed two picks: one tied, the other lost. Am I still in?",
           a: (
             <p>
               You are out. <strong>Any loss ends your entry</strong>, regardless of what the other
@@ -215,7 +222,7 @@ export default async function FaqPage() {
       heading: "Rebuys",
       items: [
         {
-          q: "I lost. Can I buy back in?",
+          q: "I lost — can I buy back in?",
           a: (
             <>
               <p>
@@ -258,7 +265,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "I tied, then lost, then rebought. Do I still owe two picks?",
+          q: "I tied, then lost, then rebought — do I still owe two picks?",
           a: (
             <p>
               {config.rebuyClearsTieDebt ? (
@@ -377,7 +384,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "The spread I see now is different from the one on my pick screen",
+          q: "Why is the spread I see now different from the one on my pick screen?",
           a: (
             <p>
               The league uses a spread frozen on Thursday. It never moves afterwards, even if the
@@ -397,7 +404,7 @@ export default async function FaqPage() {
           ),
         },
         {
-          q: "Something looks wrong. What do I do?",
+          q: "Something looks wrong — what should I do?",
           a: (
             <p>
               Email the commissioner. Corrections are possible and are logged with a reason —
@@ -427,10 +434,10 @@ export default async function FaqPage() {
         <div className="card" key={section.heading}>
           <h2 style={{ marginTop: 0 }}>{section.heading}</h2>
           {section.items.map((item) => (
-            <details className="faq-item" key={item.q}>
-              <summary>{item.q}</summary>
+            <div className="faq-item" key={item.q}>
+              <h3 className="faq-question">{item.q}</h3>
               <div className="faq-answer">{item.a}</div>
-            </details>
+            </div>
           ))}
         </div>
       ))}

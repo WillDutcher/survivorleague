@@ -926,33 +926,36 @@ button[disabled] {
 /* ---------------------------------------------------------------- faq */
 
 /*
- * Collapsed by default so the page is scannable — someone arriving mid-panic
- * on a Sunday needs to find one question, not read an essay. <details> keeps
- * it keyboard operable and searchable without JavaScript.
+ * Question and answer both always visible.
+ *
+ * Not a disclosure widget: a question on its own often reads as rhetorical, and
+ * someone can scan the headings, assume they already know, and carry on with a
+ * wrong belief. The reasoning is the part that prevents an argument in
+ * November, so it is never behind a click.
  */
 .faq-item {
   border-top: 1px solid var(--border);
-  padding: 0.6rem 0;
+  padding: 1rem 0;
 }
 
 .faq-item:first-of-type {
   border-top: none;
+  padding-top: 0.25rem;
 }
 
-.faq-item summary {
-  cursor: pointer;
-  font-weight: 600;
-  padding: 0.15rem 0;
+.faq-item:last-of-type {
+  padding-bottom: 0.25rem;
 }
 
-.faq-item summary:hover {
-  color: var(--focus);
+.faq-question {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .faq-answer {
-  padding: 0.2rem 0 0.4rem 0.9rem;
+  padding-left: 0.9rem;
   border-left: 2px solid var(--border);
-  margin-top: 0.4rem;
 }
 
 .faq-answer p {
