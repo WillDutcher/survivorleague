@@ -99,10 +99,16 @@ Preseason exhibition games can be used as a full rehearsal — real games, real
 deadlines, real defaults, **no money**.
 
 ```bash
-npm run seed -- preseason
+npm run preseason
 ```
 
-This creates a preseason season that is:
+This wipes and rebuilds the rehearsal, then creates fifteen test players across
+both tiers with varying rebuys left, all picking the **same game** split down the
+middle so the week cannot end with everyone surviving or everyone out. Real
+accounts are enrolled automatically with an active entry, so the commissioner can
+play too. `npm run preseason -- clear` removes it and reactivates the live season.
+
+It creates a preseason season that is:
 
 - **forced to practice mode** — exhibition games can never decide real money
 - **labelled everywhere** — the pick screen and dashboard both carry a banner so
@@ -149,6 +155,7 @@ will double-charge a rebuy or eliminate anyone twice.
 | **Sunday ~12:59 ET** | **Assign default picks** | Gives the strongest legal favourite to anyone who missed. Deterministic — running it late gives an identical answer |
 | **Sunday night → Tuesday** | **Process results** | Grades picks, applies the tie rule, offers rebuys, eliminates. Leaves alone anyone whose games are not final |
 | **Any time** | **Send payment reminders** | Escalating nags at 2, 6, 12 days. The app does the chasing, not you |
+| **Before any deadline** | **Chase missing picks** (on `/standings`) | Emails only the players still short, with a link to the pick page. Safe to press repeatedly — it re-checks who is short each time |
 
 **Check `/status` before each deadline.** It flags the quiet failures — lines not
 locked (default picks will refuse to run), unresolved sync exceptions, entries
@@ -218,8 +225,8 @@ rules are the product; everything else is I/O around them.
 npm test
 ```
 
-121 unit tests over the rule engine and the ESPN parsers. No database, no
-network, no mocks.
+170 unit tests over the rule engine, the provider parsers, and the contrast
+helpers. No database, no network, no mocks.
 
 Beyond that, several scripts exercise the database paths against a **disposable
 season**, so they never touch real data:
@@ -240,8 +247,30 @@ npx tsx --env-file=.env.local scripts/verify-results.ts
 
 ## Deployment
 
-Not yet deployed. Target is **Vercel Pro** (needed for per-minute cron; the free
-tier caps at once per day) plus a managed Postgres and Resend for email. See
-`ARCHITECTURE.md`.
+**Live on Vercel Pro + Neon Postgres + Resend**, with twelve cron schedules in
+`vercel.json`. Vercel Pro is required because the free tier caps cron at once per
+day. See `ARCHITECTURE.md`.
 
-Local development is fully self-contained until then.
+### What runs by itself, and the one thing that does not
+
+Everything a player touches, and every scheduled job, runs on Vercel with no
+machine of the commissioner's involved: picks, locks, default-pick assignment,
+results processing, rebuy offers, split votes, and all email.
+
+**The single exception is the schedule sync.** ESPN blocks requests from data
+centres — Vercel and Cloudflare Workers both get a 403 (D34, D35) — so
+`npm run sync:prod -- <week>` has to run from a normal residential connection.
+This is deliberately survivable rather than fragile:
+
+- The schedule is known months ahead, so every week can be loaded in one sitting.
+- Scores and betting lines come from **The Odds API**, which works fine from the
+  server, so grading and lines never wait on anyone's laptop.
+- League logic never calls a provider live. A sync that has not run yet means a
+  week is not loaded — it never means a wrong result.
+
+The only recurring reason to re-sync is **flex scheduling**, which moves late-season
+kickoffs. Re-syncing recomputes lock times for picks that have not locked yet, and
+only ever moves a lock earlier; it never reopens a pick that is already locked.
+
+Local development is fully self-contained: Docker Postgres and mail written to
+disk, no external accounts needed.

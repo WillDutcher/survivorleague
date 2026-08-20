@@ -5,108 +5,83 @@ Actionable checklist. Narrative context lives in `NEXT_STEPS.md`; rulings live i
 
 **W** = Will · **C** = Claude
 
+Last revised 2026-08-19.
+
 ---
 
-## Before signup opens (~Sept 1)
+## Blocking — needed before real money is involved
 
-- [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION` if changed materially
-- [ ] **W** — Confirm signup date, and whether the season opens live or as practice
-### Item 1 — email that actually reaches players ✅ DONE
+- [ ] **C** — **Commissioner pick override.** The brief requires correcting a bad pick
+      with an audit trail. Audit logging exists; the UI does not, so today this needs a
+      direct database edit. **Biggest remaining gap.**
+- [ ] **C** — **Payout checklist.** Amounts are computed and `paid_out_at` exists, but
+      there is no screen to tick people off as you pay them
+- [ ] **C** — **Admin exception resolution.** Sync problems are recorded and shown on
+      `/status` but cannot be marked resolved from the UI
+- [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION`
+      if the wording changes materially
+- [ ] **W** — Change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players
+      never see the personal address
+- [ ] **W** — Confirm the signup date, and whether the season opens live or as practice
 
-Domain `novasurvivorleague.com` registered at Cloudflare, verified in Resend in
-16 minutes. Real send confirmed: **inbox, not spam**, with SPF, DKIM and DMARC
-all PASS and a double DKIM signature. Cloudflare Email Routing forwards
-`commissioner@novasurvivorleague.com` to the commissioner's Gmail, running
-alongside Resend's sending records without conflict — Cloudflare owns the root,
-Resend owns the `send.` subdomain.
+## In flight — the preseason rehearsal
 
-<details><summary>Original steps</summary>
+The rehearsal is live in production right now. `npm run preseason -- clear` ends it
+and reactivates the live season.
 
-Until a domain is verified, Resend is sandboxed: it can only send from
-`onboarding@resend.dev`, and only to the address you signed up with. Fifty
-players would receive nothing. This is the blocker, not polish.
-
-- [x] **W** — Buy a domain (~$12/yr). Suggested registrar: **Cloudflare** — at-cost pricing, free DNS, fast propagation. Namecheap is fine too
-      - Avoid "NFL" in the name — a domain implying affiliation is a real trademark problem
-      - Candidates that looked unregistered: `thesurvivorleague.com`, `survivorpool.app`, `survivor.football`, `dutchersurvivor.com`
-- [x] **W** — Create a free Resend account
-- [x] **W** — In Resend, add the domain. It gives you 2–3 DNS records (SPF, DKIM, DMARC)
-- [x] **W** — Paste those records into the domain's DNS. On Cloudflare this verifies in minutes
-- [x] **W** — Create a Resend API key
-- [x] **W** — Put in `.env.local`: `RESEND_API_KEY=...` and `MAIL_FROM="Survivor League <league@yourdomain>"`
-- [x] **C** — Confirm real delivery end to end once the key is in
-
-**Answered:** free tier is 3,000 emails/month, **100/day**, 1 domain. Fine for ~50
-players, but a signup blast plus reminders plus confirmations on one day could
-brush the daily cap.
-
-</details>
-
-- [ ] **W** — Once forwarding is confirmed, change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players never see the personal address
-- [ ] **C** — Optional later: Gmail "Send mail as" via Resend SMTP, so replies also go *out* as commissioner@
-- [x] **W** — Neon project created (US East 1, PG 17.11 to match local) and `PRODUCTION_DATABASE_URL` set
-- [x] **C** — Migrations applied to Neon; 23 tables and the key constraints verified present, database empty
-- [x] **W** — Vercel Pro active
-- [ ] **W** — Run `npm run demo`, sign in as several players, report what confused you
-- [x] **C** — Deployed to Vercel + Neon; migrations applied and verified
-- [x] **C** — Cron wired: 12 schedules in vercel.json, verified registered
-- [x] **C** — Job endpoints secured and fail closed; verified 401 without a secret, 200 with one
-- [x] **C** — ESPN sync from the server: NOT POSSIBLE. ESPN blocks Vercel and Cloudflare Workers alike (D34, D35)
-- [x] **C** — Scores and lines from the server via The Odds API: WORKING, verified live on the deployed app
-- [x] **W** — All 18 weeks loaded; provider sync now reports 0 unmatched
+- [ ] **W** — Sign in as yourself and as a test player; report anything confusing
+- [ ] **C** — Let the games finish, run `process-results`, and confirm eliminations,
+      rebuy offers, and the split vote all fire on real data
 - [ ] **C** — Smoke-test the whole flow on the deployed instance before real signups
-
-## Decided, no action needed
-
-- [x] **Logos vs colours** — keep the admin toggle; switch whenever you like
-- [x] **Legal consult** — declined. No rake, no profit, money only ever goes to winners (D33)
-
-## Preseason rehearsal (window closes ~Aug 29)
-
-- [ ] **W** — Decide whether to run it
-- [ ] **C** — If yes: `npm run seed -- preseason`, sync ESPN API week 4 (= Preseason Week 3, Aug 27–29)
-- [ ] **C** — Lock lines, take picks, process results, confirm every mechanic fires
-
-## Needed in a live week (build before Week 1 if possible)
-
-- [ ] **C** — **Commissioner pick override.** The brief requires correcting a bad pick with an audit trail. Audit logging exists; the UI does not. Today this needs a direct database edit
-- [ ] **C** — **Admin exception resolution.** Sync problems are recorded and shown on `/status` but cannot be marked resolved from the UI
-- [ ] **C** — **Payout checklist.** Amounts are computed and `paid_out_at` exists; no screen to tick people off as you pay them
 
 ## Nice to have
 
-- [ ] **C** — Season config editing in admin (prices, rebuy windows, deadlines) instead of a code edit
-- [ ] **C** — Player-visible audit/history: "why did I get this default pick?"
+- [ ] **C** — Season config editing in admin (prices, rebuy windows, deadlines)
+      instead of a code edit
+- [ ] **C** — Player-visible audit: "why did I get this default pick?"
 - [ ] **C** — Commissioner ability to reopen or extend a deadline, audited
 - [ ] **C** — Bulk invite generation for the initial roster
-- [ ] **C** — Mobile polish pass on the pick screen at 12:50 on a Sunday, one-handed
-- [ ] **C** — SMS reminders (brief lists as a later channel)
+- [ ] **C** — Mobile polish pass on the pick screen — the real test is 12:50 on a
+      Sunday, one-handed
+- [ ] **C** — SMS reminders (the brief lists this as a later channel)
+- [ ] **C** — Optional: Gmail "Send mail as" via Resend SMTP, so replies also go
+      *out* as commissioner@
 
-## Known gaps I am carrying deliberately
+## Gaps carried deliberately
 
-- Scheduled jobs run manually from `/admin` until cron is wired at deploy. Every action is idempotent, so this is inconvenient rather than dangerous
-- Email verification never blocks a pick — it is a deliverability signal, not a gate (see `src/lib/verification.ts`)
-- The app never moves money in either direction (D22). Collection and payout stay manual, by design
+- **Schedule sync must run from a residential connection.** ESPN blocks data centres
+  (D34, D35). Scores and lines come from The Odds API, which works server-side, so
+  only the schedule is affected — and the schedule is known months ahead.
+- Email verification never blocks a pick. It is a deliverability signal, not a gate.
+- The app never moves money in either direction (D22). Collection and payout stay
+  manual, by design.
 
 ---
 
 ## Done
 
-- [x] Rule engine as pure functions — tie-doubling, both rebuy tiers, no-reuse, locks, default picks, settlement (125 tests)
+- [x] Rule engine as pure functions — tie-doubling, both rebuy tiers, no-reuse, locks,
+      default picks, settlement
 - [x] Schema with league invariants as Postgres constraints
-- [x] Local environment: Docker Postgres, mail to disk, no external accounts needed
 - [x] Invite-gated signup, age gate, versioned terms with IP capture
 - [x] Email + password auth, change password, reset password
 - [x] Commissioner payment queue; escalating payment reminders; email verification
-- [x] ESPN integration — schedule, scores and spreads from one keyless provider
+- [x] Provider split — ESPN for schedule, The Odds API for scores and spreads
 - [x] Thursday line locking with permanent snapshots
 - [x] Pick screen: every legal team selectable, used teams disabled with reasons
 - [x] Results processing verified against real completed 2025 games
 - [x] Rebuy offers, acceptance, and commissioner confirmation
 - [x] Negotiated (uneven) split votes with unanimity and silence-as-no
-- [x] Standings with picks hidden until they lock
+- [x] Standings — tier, rebuy position, teams used, and picks revealed at kickoff;
+      admins see everything immediately
+- [x] Missing-pick flagging and a targeted "chase missing picks" reminder
+- [x] Team colour/logo tags with per-team WCAG contrast
 - [x] Weekly reminder email
-- [x] Preseason mode, quarantined and correctly labelled
+- [x] Preseason mode, quarantined and correctly labelled; 15-player rehearsal seeder
 - [x] Demo league seeder from real results
 - [x] `/status` with environment and league health
+- [x] Deployed: Vercel Pro, Neon Postgres, Resend, domain verified, 12 cron schedules
+- [x] Job endpoints secured and fail closed
+- [x] All 18 weeks loaded; provider sync reports 0 unmatched
+- [x] 170 tests, plus five database verification scripts against disposable seasons
 - [x] README, DECISIONS, ARCHITECTURE, NEXT_STEPS
