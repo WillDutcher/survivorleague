@@ -11,7 +11,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { adminExceptions, games, oddsSnapshots, teams, weeks } from "@/db/schema";
+import { adminExceptions, games, oddsSnapshots, picks, teams, weeks } from "@/db/schema";
 import {
   fetchTeams,
   fetchWeek,
@@ -24,7 +24,7 @@ import {
   type SeasonType,
   SEASON_TYPE,
 } from "@/integrations/espn";
-import { sundayDeadlineFor } from "@/rules/locks";
+import { lockTimeFor, sundayDeadlineFor } from "@/rules/locks";
 import type { SeasonConfig } from "@/rules/config";
 import { weekStartsAt } from "@/rules/locks";
 
@@ -97,6 +97,7 @@ export async function syncWeek(
   config: SeasonConfig,
   source?: ParsedWeek & { lines: EspnLine[] },
   seasonType: SeasonType = SEASON_TYPE.regular,
+  now: Date = new Date(),
 ): Promise<SyncResult> {
   const parsed = source ?? (await fetchWeek(seasonYear, weekNumber, seasonType));
   const exceptions: string[] = [];
@@ -164,6 +165,12 @@ export async function syncWeek(
     })
     .where(eq(weeks.id, weekId));
 
+  // Flex scheduling moves kickoffs. A pick stores its lock time at the moment it
+  // was made, so a game moved EARLIER would leave a pick still editable after
+  // that game had started. Recompute lock times for picks in this week whose
+  // game has not yet locked, and never move a lock later than it already was.
+  const relocked = await relockPicksFor(weekId, deadline, config, now);
+
   const linesCaptured = await captureLines(parsed.lines, gameIdByProviderId);
 
   for (const exception of exceptions) {
@@ -176,7 +183,62 @@ export async function syncWeek(
     });
   }
 
+  if (relocked > 0) {
+    exceptions.push(
+      `${relocked} pick(s) had their lock time moved because a game was rescheduled.`,
+    );
+  }
+
   return { gamesUpserted, linesCaptured, exceptions };
+}
+
+/**
+ * Recompute lock times after a reschedule.
+ *
+ * Only picks that have not already locked are touched: a locked pick is history
+ * and must never be reopened. And a lock is only ever moved EARLIER — if a game
+ * slides later, the player already committed under the earlier deadline and
+ * giving them extra time would be an advantage nobody else got.
+ */
+async function relockPicksFor(
+  weekId: string,
+  deadline: Date | null,
+  config: SeasonConfig,
+  now: Date,
+): Promise<number> {
+  const weekGames = await db
+    .select({ id: games.id, kickoff: games.kickoff })
+    .from(games)
+    .where(eq(games.weekId, weekId));
+  if (weekGames.length === 0) return 0;
+
+  const weekPicks = await db
+    .select({ id: picks.id, gameId: picks.gameId, lockAt: picks.lockAt })
+    .from(picks)
+    .where(eq(picks.weekId, weekId));
+
+  const kickoffById = new Map(weekGames.map((g) => [g.id, g.kickoff]));
+  let changed = 0;
+
+  for (const pick of weekPicks) {
+    // Already locked: leave it alone. That decision is final.
+    if (now.getTime() >= pick.lockAt.getTime()) continue;
+
+    const kickoff = kickoffById.get(pick.gameId);
+    if (!kickoff) continue;
+
+    const shouldLockAt = deadline
+      ? lockTimeFor(kickoff, deadline, config)
+      : new Date(kickoff.getTime() - config.earlyGameLockLeadMinutes * 60_000);
+
+    // Only ever tighten.
+    if (shouldLockAt.getTime() >= pick.lockAt.getTime()) continue;
+
+    await db.update(picks).set({ lockAt: shouldLockAt }).where(eq(picks.id, pick.id));
+    changed += 1;
+  }
+
+  return changed;
 }
 
 /**

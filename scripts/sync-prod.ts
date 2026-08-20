@@ -35,6 +35,8 @@ const db = drizzle(sql, { schema });
 
 async function main() {
   const args = process.argv.slice(2).filter((a) => a !== "--");
+  const wantsAll = args.includes("all");
+  const rangeArg = args.find((a) => /^\d+-\d+$/.test(a));
   const weekArg = args.find((a) => /^\d+$/.test(a));
   const shouldLock = args.includes("lock");
 
@@ -45,46 +47,80 @@ async function main() {
   }
 
   const config = (season.rules as SeasonConfig) ?? SEASON_2026;
-  const weekNumber = weekArg ? Number(weekArg) : (season.currentWeek ?? 1);
   const seasonType = season.seasonType === 1 ? 1 : 2;
+  // Preseason is API weeks 1-4; the regular season runs to config.finalWeek.
+  const lastWeek = seasonType === 1 ? 4 : config.finalWeek;
+
+  let targets: number[];
+  if (wantsAll) {
+    targets = Array.from({ length: lastWeek }, (_, i) => i + 1);
+  } else if (rangeArg) {
+    const [from, to] = rangeArg.split("-").map(Number) as [number, number];
+    targets = Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
+  } else {
+    targets = [weekArg ? Number(weekArg) : (season.currentWeek ?? 1)];
+  }
 
   console.log(`\n${season.name}  (${season.mode}, seasontype ${seasonType})`);
-  console.log(`Syncing week ${weekNumber} from ESPN into PRODUCTION...\n`);
+  console.log(
+    `Syncing ${
+      targets.length === 1 ? `week ${targets[0]}` : `weeks ${targets[0]}-${targets.at(-1)}`
+    } from ESPN into PRODUCTION...\n`,
+  );
 
   // Imported lazily so the DATABASE_URL override above is already in place.
   const { syncTeams, syncWeek, lockLeagueLines } = await import("../src/lib/sync");
 
   const teamResult = await syncTeams();
-  console.log(`  teams upserted:  ${teamResult.teamsUpserted}`);
+  console.log(`  teams upserted:  ${teamResult.teamsUpserted}\n`);
 
-  const weekResult = await syncWeek(
-    season.id,
-    season.year,
-    weekNumber,
-    config,
-    undefined,
-    seasonType,
-  );
-  console.log(`  games upserted:  ${weekResult.gamesUpserted}`);
-  console.log(`  lines captured:  ${weekResult.linesCaptured}`);
-  if (weekResult.exceptions.length) {
-    console.log("  exceptions:");
-    for (const e of weekResult.exceptions) console.log("    - " + e);
+  let totalGames = 0;
+  let totalLines = 0;
+  const problems: string[] = [];
+
+  for (const weekNumber of targets) {
+    try {
+      const weekResult = await syncWeek(
+        season.id,
+        season.year,
+        weekNumber,
+        config,
+        undefined,
+        seasonType,
+      );
+      totalGames += weekResult.gamesUpserted;
+      totalLines += weekResult.linesCaptured ?? 0;
+      console.log(
+        `  week ${String(weekNumber).padStart(2)}:  ${String(weekResult.gamesUpserted).padStart(2)} games, ${String(weekResult.linesCaptured ?? 0).padStart(2)} lines`,
+      );
+      for (const e of weekResult.exceptions) problems.push(`week ${weekNumber}: ${e}`);
+
+      if (shouldLock) {
+        const [week] = await db
+          .select()
+          .from(weeks)
+          .where(and(eq(weeks.seasonId, season.id), eq(weeks.weekNumber, weekNumber)))
+          .limit(1);
+        if (week) {
+          const locked = await lockLeagueLines(week.id, "00000000-0000-0000-0000-000000000000");
+          console.log(`            lines locked: ${locked.locked}`);
+          if (locked.missing.length) {
+            problems.push(`week ${weekNumber} no line: ${locked.missing.join(", ")}`);
+          }
+        }
+      }
+    } catch (error) {
+      // One bad week must not abandon the rest of the season.
+      const message = error instanceof Error ? error.message : String(error);
+      console.log(`  week ${String(weekNumber).padStart(2)}:  FAILED — ${message}`);
+      problems.push(`week ${weekNumber}: ${message}`);
+    }
   }
 
-  if (shouldLock) {
-    const [week] = await db
-      .select()
-      .from(weeks)
-      .where(and(eq(weeks.seasonId, season.id), eq(weeks.weekNumber, weekNumber)))
-      .limit(1);
-    if (week) {
-      const locked = await lockLeagueLines(week.id, "00000000-0000-0000-0000-000000000000");
-      console.log(`  league lines locked: ${locked.locked}`);
-      if (locked.missing.length) {
-        console.log("  NO LINE for: " + locked.missing.join(", "));
-      }
-    }
+  console.log(`\n  total: ${totalGames} games, ${totalLines} candidate lines`);
+  if (problems.length) {
+    console.log("\n  problems:");
+    for (const p of problems) console.log("    - " + p);
   }
 
   console.log("\nDone. The deployed app reads the same database, so this is live now.\n");
