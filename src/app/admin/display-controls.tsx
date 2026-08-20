@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { runSync, toggleTeamLogos, type FormState } from "@/app/actions";
 
 export function LogoToggle({ enabled }: { enabled: boolean }) {
@@ -23,11 +23,21 @@ export function LogoToggle({ enabled }: { enabled: boolean }) {
 
 export function SyncControl({ defaultWeek }: { defaultWeek: number }) {
   const [state, action, pending] = useActionState<FormState, FormData>(runSync, {});
+  // Controlled so the chosen week is not lost when the action re-renders.
+  const [week, setWeek] = useState(String(defaultWeek));
 
   return (
     <form action={action} className="inline-form">
       <label htmlFor="weekNumber">Week</label>
-      <input id="weekNumber" name="weekNumber" type="number" min={1} max={18} defaultValue={defaultWeek} />
+      <input
+        id="weekNumber"
+        name="weekNumber"
+        type="number"
+        min={1}
+        max={18}
+        value={week}
+        onChange={(e) => setWeek(e.target.value)}
+      />
       <button type="submit" disabled={pending} className="primary">
         {pending ? "Syncing…" : "Sync schedule, scores and lines"}
       </button>

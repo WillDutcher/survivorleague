@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { lockLines, runDefaults, runResults, sendReminder, type FormState } from "@/app/actions";
 
 function Control({
@@ -19,11 +19,24 @@ function Control({
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
   const id = label.replace(/\s+/g, "-").toLowerCase();
 
+  // Controlled, so the chosen week survives the re-render after the action.
+  // An uncontrolled input silently snapped back to the season's current week,
+  // which made it look like the wrong week had been submitted.
+  const [week, setWeek] = useState(String(defaultWeek));
+
   return (
     <div className="week-control">
       <form action={formAction} className="inline-form">
         <label htmlFor={id}>Week</label>
-        <input id={id} name="weekNumber" type="number" min={1} max={18} defaultValue={defaultWeek} />
+        <input
+          id={id}
+          name="weekNumber"
+          type="number"
+          min={1}
+          max={18}
+          value={week}
+          onChange={(e) => setWeek(e.target.value)}
+        />
         <button type="submit" disabled={pending} className={variant}>
           {pending ? "Working…" : label}
         </button>

@@ -382,9 +382,30 @@ Commissioner's worked cases, all consistent with the formula:
 - If the pool ever takes a cut, grows beyond a private friend group, or is publicly promoted, this decision should be revisited.
 - The toggle for team logos (D31) remains available and is unrelated to this.
 
+## D34 - ESPN blocks the deployed server; sync originates elsewhere
+**Finding (verified 2026-08-19):** ESPN returns 403 to requests from Vercel. Browser-like headers (realistic User-Agent, Accept, Referer, Origin) were deployed and made no difference, so the filter is on IP, not user agent. A home connection is accepted; a datacentre one is not.
+
+**Decision:** The weekly sync runs from a machine ESPN will talk to, via `npm run sync:prod`, writing into the same Neon database the deployed app reads.
+
+**Why this is survivable rather than fatal:**
+- League logic NEVER reads the provider live. It only reads what was persisted (PROJECT_BRIEF). That was designed for provider outages and turns out to cover this too.
+- Deadlines and locks are clock arithmetic against stored `lock_at` values - no network involved.
+- Default picks read the Thursday-locked snapshot already in the database.
+- The rule engine is pure. Nothing in it touches a network.
+- So only two things need ESPN: getting the schedule in, and getting scores back out. Both are weekly, not continuous.
+
+**What this costs:** scheduled jobs on Vercel cannot fetch. Results processing therefore needs a sync to have happened first, which is currently manual.
+
+**Options not yet tried, in order of promise:**
+1. Cloudflare Worker as a fetch proxy. Workers egress from Cloudflare's edge rather than AWS, so they may not be blocked. The commissioner already has a Cloudflare account and the domain there. Free tier covers this volume many times over.
+2. A scheduled task on the commissioner's own machine.
+3. A different scores provider, which reintroduces a vendor and probably a cost.
+
 ---
 
 ## Open questions
+
+- [ ] D34: try a Cloudflare Worker proxy so scheduled jobs can reach ESPN from the server.
 
 
 - [ ] Verify Resend free-tier daily send cap before the first Thursday blast to ~50 players.
