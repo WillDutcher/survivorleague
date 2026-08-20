@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { parseLines, parseScores, teamIdFor } from "./oddsapi";
 
 /**
- * These payloads are built to the documented shape rather than captured, since
- * fetching real ones needs a key. They are replaced with real captures as soon
- * as the key exists — until then, treat green tests here as "the parser does
- * what I intended", not "the provider returns this".
+ * Two kinds of test below.
  *
- * The cases that matter are the ones where a wrong guess grades the wrong pick.
+ * The hand-built payloads exercise the cases that matter — an away favourite, a
+ * pick'em, a completed game missing a score — which real data may not contain
+ * on any given day.
+ *
+ * The captured payloads are REAL responses from The Odds API, so a change in the
+ * provider's shape fails here rather than silently producing wrong picks.
  */
 
 const completedGame = {
@@ -194,5 +196,54 @@ describe("parseLines", () => {
     const { lines, problems } = parseLines([unquoted]);
     expect(lines).toHaveLength(0);
     expect(problems[0]?.message).toMatch(/No bookmaker/i);
+  });
+});
+
+
+// ---------------------------------------------------------------- real captures
+
+import realScores from "./fixtures/oddsapi-scores.json";
+import realOdds from "./fixtures/oddsapi-odds.json";
+
+describe("against real captured responses", () => {
+  it("parses every scores event without a problem", () => {
+    const { scores, problems } = parseScores(realScores);
+    expect(scores.length).toBeGreaterThan(0);
+    expect(problems).toEqual([]);
+  });
+
+  it("parses every odds event and finds a line for each", () => {
+    const { lines, problems } = parseLines(realOdds, "draftkings");
+    expect(lines.length).toBeGreaterThan(0);
+    expect(problems).toEqual([]);
+  });
+
+  it("recognises every team name the provider actually uses", () => {
+    // An unmapped name would grade a pick against the wrong game, so this is
+    // the assertion most worth having on real data.
+    const names = new Set<string>();
+    for (const event of [...(realScores as unknown[]), ...(realOdds as unknown[])]) {
+      const e = event as { home_team?: string; away_team?: string };
+      if (e.home_team) names.add(e.home_team);
+      if (e.away_team) names.add(e.away_team);
+    }
+    const unmapped = [...names].filter((n) => teamIdFor(n) === null);
+    expect(unmapped, `unmapped: ${unmapped.join(", ")}`).toEqual([]);
+  });
+
+  it("never reports a negative spread magnitude", () => {
+    for (const line of parseLines(realOdds).lines) {
+      expect(line.spread, `${line.awayTeamId}@${line.homeTeamId}`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("agrees with ESPN on the same game — SEA favoured by 3.5 over NE", () => {
+    // Independent confirmation of favourite detection: ESPN's own payload gives
+    // "SEA -3.5" for this fixture, and a different provider agrees.
+    const line = parseLines(realOdds).lines.find(
+      (l) => l.awayTeamId === "NE" && l.homeTeamId === "SEA",
+    );
+    expect(line?.favoriteTeamId).toBe("SEA");
+    expect(line?.spread).toBe(3.5);
   });
 });
