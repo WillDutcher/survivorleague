@@ -841,6 +841,42 @@ export async function overridePickAction(
   return result.ok ? { ok: result.message } : { error: result.message };
 }
 
+// ---------------------------------------------------------------- payouts
+
+export async function settleSeasonAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const week = Number(formData.get("weekJustCompleted") ?? season.currentWeek ?? 1);
+  const { settleSeasonNow } = await import("@/lib/payouts");
+  const r = await settleSeasonNow(season.id, season.config, week, user.id);
+
+  revalidatePath("/admin/payouts");
+  return r.ok ? { ok: r.message } : { error: r.message };
+}
+
+export async function markPaidAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const payoutId = String(formData.get("payoutId") ?? "");
+  const reference = String(formData.get("reference") ?? "");
+  if (!payoutId) return { error: "Missing payout." };
+
+  const { markPaidOut } = await import("@/lib/payouts");
+  const r = await markPaidOut(payoutId, season.id, user.id, reference);
+
+  revalidatePath("/admin/payouts");
+  return r.ok ? { ok: r.message } : { error: r.message };
+}
+
 // ---------------------------------------------------------------- verification
 
 export async function resendVerification(_prev: FormState, _data: FormData): Promise<FormState> {

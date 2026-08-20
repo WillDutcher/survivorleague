@@ -11,8 +11,6 @@ Last revised 2026-08-19.
 
 ## Blocking — needed before real money is involved
 
-- [ ] **C** — **Payout checklist.** Amounts are computed and `paid_out_at` exists, but
-      there is no screen to tick people off as you pay them
 - [ ] **C** — **Admin exception resolution.** Sync problems are recorded and shown on
       `/status` but cannot be marked resolved from the UI
 - [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION`
@@ -71,6 +69,7 @@ and reactivates the live season.
 - [x] Negotiated (uneven) split votes with unanimity and silence-as-no
 - [x] Standings — tier, rebuy position, teams used, and picks revealed at kickoff;
       admins see everything immediately
+- [x] Payout checklist at `/admin/payouts` — settle, then tick people off as you send
 - [x] Commissioner pick override — until grading, audited, no-reuse still enforced (D44)
 - [x] Missing-pick flagging and a targeted "chase missing picks" reminder
 - [x] Team colour/logo tags with per-team WCAG contrast

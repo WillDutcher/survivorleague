@@ -226,6 +226,15 @@ export default async function AdminPage() {
         <ReminderControl defaultWeek={season.currentWeek ?? 1} />
       </div>
 
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Payouts</h2>
+        <p className="muted">
+          Who is owed what once the season is decided, and a checklist to tick off as you send
+          the money. The app never moves money itself.
+        </p>
+        <Link href="/admin/payouts">Open the payout checklist</Link>
+      </div>
+
       <PickOverride
         entries={overrideCtx.entries}
         games={overrideCtx.games}

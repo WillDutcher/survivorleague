@@ -240,6 +240,8 @@ npx tsx --env-file=.env.local scripts/verify-results.ts
 | `verify-picks.ts` | Cross-week reuse rejected by the server, deadlines, replace/remove, multi-pick slots |
 | `verify-results.ts` | Grading against **real completed 2025 games**, every rebuy window, tie handling, idempotency |
 | `verify-endgame.ts` | Rebuy acceptance and confirmation, split proposals and voting, standings visibility, reminders |
+| `verify-override.ts` | Commissioner pick overrides — mostly the refusals: graded weeks, no-reuse, missing reasons |
+| `verify-payouts.ts` | Settlement for both endings, and that payouts sum back to the pot exactly |
 | `verify-nags.ts` | Email verification tokens, escalating payment reminders |
 | `verify-preseason.ts` | Preseason syncs exhibition games and never leaks a real one |
 
