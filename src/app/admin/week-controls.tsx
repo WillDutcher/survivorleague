@@ -1,7 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { lockLines, runDefaults, runResults, sendReminder, type FormState } from "@/app/actions";
+import {
+  lockLines,
+  runDefaults,
+  runOddsSync,
+  runResults,
+  sendReminder,
+  type FormState,
+} from "@/app/actions";
 
 function Control({
   action,
@@ -42,6 +49,27 @@ function Control({
         </button>
       </form>
       <p className="muted hint">{hint}</p>
+      {state.error ? <p role="alert" className="status-bad hint"> {state.error}</p> : null}
+      {state.ok ? <p role="status" className="status-ok hint"> {state.ok}</p> : null}
+    </div>
+  );
+}
+
+export function OddsSyncControl() {
+  const [state, action, pending] = useActionState<FormState, FormData>(runOddsSync, {});
+
+  return (
+    <div className="week-control">
+      <form action={action}>
+        <button type="submit" disabled={pending} className="primary">
+          {pending ? "Fetching…" : "Fetch scores and lines"}
+        </button>
+      </form>
+      <p className="muted hint">
+        Pulls from The Odds API, which works from the server — ESPN refuses it. Updates scores on
+        finished games and captures fresh candidate lines. Scores are only available for the last
+        3 days, so a Sunday slate must be fetched by Wednesday.
+      </p>
       {state.error ? <p role="alert" className="status-bad hint"> {state.error}</p> : null}
       {state.ok ? <p role="status" className="status-ok hint"> {state.ok}</p> : null}
     </div>

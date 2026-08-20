@@ -10,7 +10,7 @@ import { unverifiedUsers } from "@/lib/verification";
 import { NagControl } from "./nag-control";
 import { LogoToggle, SyncControl } from "./display-controls";
 import { RebuyRow } from "./rebuy-row";
-import { ReminderControl, WeekControls } from "./week-controls";
+import { OddsSyncControl, ReminderControl, WeekControls } from "./week-controls";
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
 
@@ -216,6 +216,7 @@ export default async function AdminPage() {
           Every one of these is safe to run twice — none of them will double-charge a rebuy or
           eliminate someone twice.
         </p>
+        <OddsSyncControl />
         <WeekControls defaultWeek={season.currentWeek ?? 1} />
         <ReminderControl defaultWeek={season.currentWeek ?? 1} />
       </div>

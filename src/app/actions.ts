@@ -830,3 +830,45 @@ export async function runPaymentReminders(_prev: FormState, _data: FormData): Pr
     ok: `Sent ${report.sent}${report.failed ? `, ${report.failed} failed` : ""}. ${report.details.join(" · ")}`,
   };
 }
+
+/**
+ * Pull scores and lines from The Odds API.
+ *
+ * This is the one that can run from the server, unlike ESPN (D35), so it is
+ * what the scheduled jobs will call.
+ */
+export async function runOddsSync(_prev: FormState, _data: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  try {
+    const { syncScoresAndLines } = await import("@/lib/sync-oddsapi");
+    const report = await syncScoresAndLines(season.id, season.config.timezone);
+
+    await db.insert(auditEvents).values({
+      actorUserId: user.id,
+      action: "sync.odds_api",
+      entityType: "season",
+      entityId: season.id,
+      after: { ...report },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/week");
+
+    const parts = [
+      `${report.scoresUpdated} score(s) updated`,
+      `${report.linesCaptured} line(s) captured`,
+    ];
+    if (report.unmatched > 0) parts.push(`${report.unmatched} provider game(s) matched nothing`);
+    if (report.creditsRemaining) parts.push(`${report.creditsRemaining} API credits left`);
+
+    return {
+      ok: parts.join(", ") + "." + (report.exceptions.length ? ` ${report.exceptions.length} exception(s) raised.` : ""),
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}

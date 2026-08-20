@@ -48,7 +48,21 @@ export default {
     const provided = request.headers.get("x-proxy-secret") ?? "";
     const expected = env.PROXY_SECRET ?? "";
     if (!expected) return deny("Proxy is not configured.", 500);
-    if (!constantTimeEqual(provided, expected)) return deny("Forbidden.", 403);
+    if (!constantTimeEqual(provided, expected)) {
+      // Diagnostic only: reports LENGTHS and nothing else, so a mismatch can be
+      // told apart from a stray space or a truncated paste without ever
+      // revealing either secret. Remove once the proxy is confirmed working.
+      return new Response(
+        JSON.stringify({
+          error: "Forbidden.",
+          expectedLength: expected.length,
+          providedLength: provided.length,
+          expectedStartsWith: expected.slice(0, 3),
+          providedStartsWith: provided.slice(0, 3),
+        }),
+        { status: 403, headers: { "content-type": "application/json" } },
+      );
+    }
 
     const target = new URL(request.url).searchParams.get("url");
     if (!target) return deny("Missing url parameter.", 400);

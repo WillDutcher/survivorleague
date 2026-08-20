@@ -401,11 +401,30 @@ Commissioner's worked cases, all consistent with the formula:
 2. A scheduled task on the commissioner's own machine.
 3. A different scores provider, which reintroduces a vendor and probably a cost.
 
+## D35 - The Odds API supplies scores and lines; ESPN keeps the schedule
+**Finding:** the Cloudflare Worker proxy was built and deployed, and ESPN returned its own "Access Denied" page through it. ESPN blocks Cloudflare's edge as well as Vercel's IPs. The proxy experiment is settled: no.
+
+**Decision:** split the providers by what each is actually needed for.
+- **ESPN — schedule and week structure.** Which games exist, when they kick off, which NFL week they belong to. Synced from the commissioner's machine via `npm run sync:prod`. A season's week layout barely changes, so this is infrequent and manual is acceptable.
+- **The Odds API — scores and point spreads.** Keyed, built for server access, no IP filtering. This is what the scheduled jobs call, so the weekly loop can automate.
+
+**Implication:**
+- Restores automation for the parts that need it weekly. Schedule sync stays manual but rarely needed.
+- The Odds API has NO week concept - it is date-based. Games are matched to existing ESPN-defined games on the two team ids plus the kickoff DATE, with a 12-hour tolerance either side: providers disagree by minutes on start times, and a late Sunday kickoff falls on a different calendar day depending on the timezone reported. An exact-timestamp match would silently find nothing.
+- Nothing in this path CREATES games. A provider event matching no known game is reported, never inserted - a game with no week belongs to no rule and would sit invisible.
+- HARD LIMIT: the scores endpoint accepts `daysFrom` of 1-3 only. A Sunday slate must be fetched by Wednesday. Results processing is idempotent and safe to run late, but the scores themselves have to be collected inside that window.
+- Team names are translated from full names to our abbreviations; an unrecognised name raises an exception rather than guessing, because a wrong team grades the wrong pick.
+- Lines captured here remain CANDIDATES. They become the league line only when the commissioner locks them (D10), unchanged.
+- Free tier is 500 credits/month. One scores call costs 2 with daysFrom, one spreads call costs 1. A weekly loop uses well under 100 a season.
+- D29 dropped The Odds API because ESPN was keyless and simpler. That reasoning was sound until ESPN turned out to be unreachable from any server. This supersedes it for scores and odds only.
+
+**Not yet verified against the real API.** Parsers are written to the documented shape and tested against synthetic payloads. They get checked against real responses as soon as a key exists.
+
 ---
 
 ## Open questions
 
-- [ ] D34: try a Cloudflare Worker proxy so scheduled jobs can reach ESPN from the server.
+- [ ] Verify the Odds API parsers against real responses once ODDS_API_KEY is set (D35).
 
 
 - [ ] Verify Resend free-tier daily send cap before the first Thursday blast to ~50 players.
