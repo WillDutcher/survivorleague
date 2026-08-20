@@ -46,14 +46,14 @@ brush the daily cap.
 - [ ] **C** — Optional later: Gmail "Send mail as" via Resend SMTP, so replies also go *out* as commissioner@
 - [x] **W** — Neon project created (US East 1, PG 17.11 to match local) and `PRODUCTION_DATABASE_URL` set
 - [x] **C** — Migrations applied to Neon; 23 tables and the key constraints verified present, database empty
-- [ ] **W** — Create Vercel account, upgrade to Pro (per-minute cron)
+- [x] **W** — Vercel Pro active
 - [ ] **W** — Run `npm run demo`, sign in as several players, report what confused you
-- [ ] **C** — Deploy to Vercel + Neon, verify migrations run against managed Postgres
-- [ ] **C** — Wire cron triggers: odds fetch, Thursday reminder, Sunday 12:59 defaults, result sync
-- [ ] **C** — Secure the job endpoints with `JOB_TRIGGER_SECRET`
+- [x] **C** — Deployed to Vercel + Neon; migrations applied and verified
+- [x] **C** — Cron wired: 12 schedules in vercel.json, verified registered
+- [x] **C** — Job endpoints secured and fail closed; verified 401 without a secret, 200 with one
 - [x] **C** — ESPN sync from the server: NOT POSSIBLE. ESPN blocks Vercel and Cloudflare Workers alike (D34, D35)
 - [x] **C** — Scores and lines from the server via The Odds API: WORKING, verified live on the deployed app
-- [ ] **W** — Load remaining weeks: `npm run sync:prod -- 2`, `3`, … so provider games have something to match
+- [x] **W** — All 18 weeks loaded; provider sync now reports 0 unmatched
 - [ ] **C** — Smoke-test the whole flow on the deployed instance before real signups
 
 ## Decided, no action needed
