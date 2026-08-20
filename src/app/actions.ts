@@ -10,6 +10,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -131,7 +132,15 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
       // Practice seasons have no payment gate (D12), so entries start active.
       status: season.mode === "practice" ? "active" : "registered",
       requiredPicks: 1,
-      includedRebuysRemaining: tierConfig(config, tier).includedRebuys,
+      // A practice season is a rehearsal, and a rehearsal where everyone has
+      // the same rebuy position never exercises the interesting branches. So
+      // practice entries get 0 or 1 at random: some people hit a loss and are
+      // simply out, others get offered a rebuy, and both paths get walked
+      // without anyone having to be told which one they are.
+      includedRebuysRemaining:
+        season.mode === "practice"
+          ? randomInt(0, 2)
+          : tierConfig(config, tier).includedRebuys,
     });
 
     await tx.insert(auditEvents).values({
@@ -200,10 +209,16 @@ export async function issueInvite(_prev: FormState, formData: FormData): Promise
   }
 
   const note = String(formData.get("note") ?? "").trim() || undefined;
+  // One link for a group is the difference between inviting eight friends and
+  // sending eight messages. Capped so a leaked link cannot open the league to
+  // the internet.
+  const requested = Number(formData.get("maxUses") ?? 1);
+  const maxUses = Number.isFinite(requested) ? Math.min(Math.max(Math.trunc(requested), 1), 50) : 1;
+
   const invite = await createInvite({
     seasonId: season.id,
     createdByUserId: user.id,
-    maxUses: 1,
+    maxUses,
     ...(note ? { note } : {}),
   });
 
