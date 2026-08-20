@@ -420,6 +420,19 @@ Commissioner's worked cases, all consistent with the formula:
 
 **Not yet verified against the real API.** Parsers are written to the documented shape and tested against synthetic payloads. They get checked against real responses as soon as a key exists.
 
+## D36 - Cloudflare runs the schedule; Vercel stays on the free tier
+**Decision:** Scheduled jobs are triggered by a Cloudflare Worker cron, which calls HTTP endpoints at `/api/jobs/<name>` on the deployed app. Vercel Pro is no longer required.
+**Context:** Vercel's free tier caps cron at once per day, which cannot run a job at 12:59 on a Sunday. Pro would solve it at $20/month, but the commissioner's card was declined and billing is not something that should block the build.
+
+**Why this works where the ESPN proxy did not (D35):** that proxy had to reach ESPN, which blocks Cloudflare. This only has to reach the Survivor League app on Vercel - ordinary HTTPS between two services that are happy to talk.
+
+**Implication:**
+- Job endpoints FAIL CLOSED. An unset `JOB_TRIGGER_SECRET` refuses every request; it never means "allow everyone". Secrets are compared in constant time.
+- Cron triggers are UTC only and the league runs on Eastern, which shifts an hour at DST. Both offsets are scheduled deliberately, so for half the year a job fires twice. That is safe BECAUSE every job is idempotent - a property of the jobs themselves, not of the scheduler. Missing the Sunday deadline job would matter; running it twice does not.
+- Jobs within one trigger run sequentially: `process-results` depends on `sync-odds` having landed scores first.
+- The Worker also exposes a manual POST for running any job off-schedule, which is how it gets tested.
+- One secret lives in three places: `.env.local`, Vercel, and the Worker.
+
 ---
 
 ## Open questions
