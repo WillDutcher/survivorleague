@@ -247,21 +247,51 @@ const BROWSERISH_HEADERS = {
   Origin: "https://www.espn.com",
 } as const;
 
+/**
+ * Route through the Cloudflare Worker proxy when one is configured (D34).
+ *
+ * ESPN refuses Vercel's IP, so the deployed app cannot fetch directly. Setting
+ * ESPN_PROXY_URL and ESPN_PROXY_SECRET sends requests via a Worker, which
+ * egresses from Cloudflare's edge instead. Unset, requests go direct — which is
+ * what happens on a developer machine, where ESPN answers fine.
+ */
+function requestFor(url: string): { url: string; headers: Record<string, string> } {
+  const proxy = process.env.ESPN_PROXY_URL;
+  const secret = process.env.ESPN_PROXY_SECRET;
+
+  if (proxy && secret) {
+    return {
+      url: `${proxy.replace(/\/$/, "")}/?url=${encodeURIComponent(url)}`,
+      headers: { Accept: "application/json", "x-proxy-secret": secret },
+    };
+  }
+
+  return { url, headers: { ...BROWSERISH_HEADERS } };
+}
+
 async function getJson(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    headers: BROWSERISH_HEADERS,
+  const request = requestFor(url);
+  const viaProxy = request.url !== url;
+
+  const response = await fetch(request.url, {
+    headers: request.headers,
     // Always go to the network: a cached scoreboard during a live Sunday is worse
     // than a slow one.
     cache: "no-store",
   });
+
   if (!response.ok) {
+    const how = viaProxy ? "via the Cloudflare proxy" : "directly";
     throw new Error(
-      `ESPN responded ${response.status} for ${url}` +
+      `ESPN responded ${response.status} for ${url} (${how})` +
         (response.status === 403
-          ? " — ESPN is refusing this server. Sync from a machine it will talk to using `npm run sync:prod`."
+          ? viaProxy
+            ? " — ESPN is refusing the proxy too. Sync from a machine it will talk to using `npm run sync:prod`."
+            : " — ESPN is refusing this server. Either configure ESPN_PROXY_URL, or sync with `npm run sync:prod`."
           : ""),
     );
   }
+
   return response.json();
 }
 
