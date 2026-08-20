@@ -13,6 +13,9 @@ import { RebuyRow } from "./rebuy-row";
 import { OddsSyncControl, ReminderControl, WeekControls } from "./week-controls";
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
+import { PickOverride } from "./pick-override";
+import { loadOverrideContext } from "@/lib/pick-override";
+import { weekLabel } from "@/rules/weeks";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +50,8 @@ export default async function AdminPage() {
   const unverified = await unverifiedUsers();
   const nagged = await reminderHistory(season.id);
   const entryNameById = new Map(entries.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
+  const overrideWeek = season.currentWeek ?? 1;
+  const overrideCtx = await loadOverrideContext(season.id, overrideWeek, season.config);
 
   const awaiting = entries.filter((e) => e.amountOwedCents > 0);
   const active = entries.filter((e) => e.status === "active");
@@ -220,6 +225,13 @@ export default async function AdminPage() {
         <WeekControls defaultWeek={season.currentWeek ?? 1} />
         <ReminderControl defaultWeek={season.currentWeek ?? 1} />
       </div>
+
+      <PickOverride
+        entries={overrideCtx.entries}
+        games={overrideCtx.games}
+        weekNumber={overrideWeek}
+        weekLabel={weekLabel(season.seasonType, overrideWeek)}
+      />
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Team display</h2>

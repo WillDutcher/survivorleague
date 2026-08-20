@@ -440,3 +440,25 @@ Commissioner's worked cases, all consistent with the formula:
 
 - [ ] Verify Resend free-tier daily send cap before the first Thursday blast to ~50 players.
 - [ ] NOTE: 2026 Week 1 opens WEDNESDAY Sept 9 (NE at SEA, 8:20pm ET), not Thursday Sept 10. Deadlines are one day tighter than previously assumed.
+
+## D44 — Commissioner pick overrides stop at grading
+
+**Decided 2026-08-19.**
+
+An override is allowed right up until the week is graded, which deliberately
+includes the window *after* kickoff. The real case is narrow and was stated
+plainly: it is 12:56, someone emails to say their computer froze mid-submit.
+Refusing at the deadline would leave exactly that person with no remedy.
+
+Overrides are refused once results are processed. Reversing a graded week would
+have to unwind eliminations, rebuy offers, and split ballots that were issued on
+the strength of that result — a half-unwound season is worse than a wrong pick.
+A graded individual pick is refused too, even if the week is not yet marked.
+
+The no-reuse rule is **not** bypassed. `unique(entry_id, team_id)` is a database
+constraint precisely so that no code path, including this one, can violate it.
+
+Every override writes an audit row with the before state, the after state, and a
+required free-text reason, and the pick is stamped `source: commissioner` so it
+can never be mistaken for the player's own choice or an automatic default.
+

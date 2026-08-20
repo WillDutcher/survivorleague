@@ -803,6 +803,44 @@ export async function nudgeMissing(_prev: FormState, formData: FormData): Promis
   };
 }
 
+/**
+ * Commissioner pick override (D44). Every path through this is audited by
+ * overridePick itself, including the refusals' reasons via the returned message.
+ */
+export async function overridePickAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+  if (!season) return { error: "No season configured." };
+
+  const entryId = String(formData.get("entryId") ?? "");
+  const gameId = String(formData.get("gameId") ?? "");
+  const teamId = String(formData.get("teamId") ?? "");
+  const weekNumber = Number(formData.get("weekNumber") ?? season.currentWeek ?? 1);
+  const slot = Number(formData.get("slot") ?? 1);
+  const reason = String(formData.get("reason") ?? "");
+
+  if (!entryId || !gameId || !teamId) return { error: "Pick a player, a game, and a team." };
+
+  const { overridePick } = await import("@/lib/pick-override");
+  const result = await overridePick(season.id, season.config, {
+    entryId,
+    weekNumber,
+    teamId,
+    gameId,
+    slot,
+    reason,
+    actorUserId: user.id,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/standings");
+  return result.ok ? { ok: result.message } : { error: result.message };
+}
+
 // ---------------------------------------------------------------- verification
 
 export async function resendVerification(_prev: FormState, _data: FormData): Promise<FormState> {
