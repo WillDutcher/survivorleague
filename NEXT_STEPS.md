@@ -90,3 +90,40 @@ override) is the one most likely to be needed in a live week.
 | ~Sept 1 | Signup opens (target) |
 | **Wed Sept 9** | **2026 Week 1 kicks off** — NE at SEA, 8:20 PM ET |
 | Sun Sept 13 | First real Sunday deadline, 12:55 PM ET |
+
+---
+
+## Session state — 2026-08-19
+
+Everything below is committed and pushed (`7f3b07f`). 170 tests, clean typecheck, clean `next build`.
+
+### Landed this session
+- **Standings rewrite** — columns are Player / Entry / Rebuys / State / This week / Teams used.
+  - A pick is revealed when **its game kicks off**, not when picks lock. These are different
+    instants: a Monday-night pick locks Sunday 12:55 and starts 30 hours later.
+  - "Pick made — hidden until kickoff" is deliberately distinct from "No pick yet".
+  - **Admins see every pick immediately**, tagged "not public yet".
+  - Rebuy text is tier-specific: `2 of 3 left` ($80) vs `Available through Week 5` ($20).
+- **Team tags** (`src/app/team-tag.tsx`) honour the existing season logos/colors flag.
+  `src/lib/colors.ts` picks black-or-white text per team by WCAG luminance (15 tests).
+- **Pick history** is a 3-column grid with W/L/T per pick.
+- `scripts/preseason.ts` now enrolls real accounts, not just the 15 fakes.
+
+### Known state of production
+- Active season is **2026 Preseason Rehearsal** (practice, seasonType 1, ESPN API week 3).
+- The live "2026 Survivor League" season is inactive until `npm run preseason -- clear`.
+- 15 `@preseason.test` accounts, password `preseason-test-2026`, all picking the week's last
+  game split down the middle so results are guaranteed mixed.
+
+### Next, highest value first
+1. **Commissioner pick override** — still requires a direct DB edit. Biggest remaining gap.
+2. Admin exception-resolution UI.
+3. Payout checklist screen.
+4. Run the rehearsal end to end: let the preseason games finish, then `process-results`,
+   and confirm eliminations, rebuy offers and the split vote all behave.
+
+### Watch out for
+- ESPN blocks servers; schedule syncs must run from a local machine. The Odds API works
+  server-side and supplies scores + lines.
+- CSS specificity bit us once already: `.teams-used .pick-history li` (0,2,1) outranks
+  `.teams-used .pick-chip` (0,2,0). Do not set `display` on the `li`.
