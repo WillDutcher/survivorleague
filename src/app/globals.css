@@ -965,3 +965,27 @@ button[disabled] {
 .faq-answer p:last-child {
   margin-bottom: 0;
 }
+
+/* -------------------------------------------------- contact the commissioner */
+
+.ask-commissioner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ask-commissioner p {
+  margin: 0;
+}
+
+/*
+ * The address is set large and monospaced for the same reason the PayPal
+ * address is: people transcribe it by hand onto a phone, and an ambiguous
+ * character costs them the message.
+ */
+.ask-address a {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  word-break: break-all;
+}

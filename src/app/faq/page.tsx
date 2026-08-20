@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AskCommissioner } from "@/app/ask-commissioner";
+import { commissionerMailto } from "@/lib/league";
 import { currentSeason, formatMoney } from "@/lib/season";
 import { tierConfig } from "@/rules/config";
 import { SEASON_2026 } from "@/rules/config";
@@ -130,9 +132,12 @@ export default async function FaqPage() {
                 a slow connection all fail in the direction of thinking you had more time.
               </p>
               <p>
-                That said, if something genuinely went wrong — the page hung, the app errored —
-                email the commissioner. There is a way to correct a pick, it is logged, and it is
-                there precisely for this.
+                That said, if something genuinely went wrong — the page hung, the app errored —{" "}
+                <a href={commissionerMailto("Pick did not save before the deadline")}>
+                  email the commissioner
+                </a>
+                . There is a way to correct a pick, it is logged, and it is there precisely for
+                this.
               </p>
             </>
           ),
@@ -407,9 +412,9 @@ export default async function FaqPage() {
           q: "Something looks wrong — what should I do?",
           a: (
             <p>
-              Email the commissioner. Corrections are possible and are logged with a reason —
-              there is a real audit trail, so raising it costs you nothing and a genuine mistake
-              can be fixed.
+              <a href={commissionerMailto("Something looks wrong")}>Email the commissioner</a>.
+              Corrections are possible and are logged with a reason — there is a real audit trail,
+              so raising it costs you nothing and a genuine mistake can be fixed.
             </p>
           ),
         },
@@ -444,10 +449,10 @@ export default async function FaqPage() {
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Still stuck?</h2>
-        <p>
-          Email the commissioner. If it is close to a deadline, say so in the subject line — that
-          is the one time a reply genuinely cannot wait.
-        </p>
+        <AskCommissioner subject="Question about the league">
+          Nothing here answering it? Ask. There is no such thing as a question that is too small
+          — most of these entries exist because somebody asked.
+        </AskCommissioner>
       </div>
     </>
   );

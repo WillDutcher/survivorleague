@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AskCommissioner } from "@/app/ask-commissioner";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { currentSeason, entryForUser, formatMoney, seasonPotCents, weekLabel } from "@/lib/season";
@@ -219,6 +220,10 @@ export default async function Dashboard() {
           </>
         ) : null}
       </p>
+
+      <div className="card">
+        <AskCommissioner subject="Question" />
+      </div>
     </>
   );
 }

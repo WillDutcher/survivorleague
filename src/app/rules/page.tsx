@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { AskCommissioner } from "@/app/ask-commissioner";
 import { currentSeason, formatMoney } from "@/lib/season";
 import { TERMS, TERMS_VERSION } from "@/lib/terms";
 import { SEASON_2026, tierConfig } from "@/rules/config";
@@ -174,6 +176,14 @@ export default async function RulesPage() {
             ))}
           </section>
         ))}
+      </div>
+
+      <div className="card">
+        <AskCommissioner subject="Question about the rules">
+          Anything here unclear, or a situation the rules do not seem to cover? Ask before it
+          matters rather than after — the{" "}
+          <Link href="/faq">questions people actually ask</Link> page may cover it already.
+        </AskCommissioner>
       </div>
     </>
   );
