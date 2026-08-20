@@ -15,8 +15,8 @@ All code blockers are done. What remains here is yours.
 
 - [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION`
       if the wording changes materially
-- [ ] **W** — Change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players
-      never see the personal address
+- [ ] **W** — Set `REPLY_TO` to `commissioner@novasurvivorleague.com` in Vercel env vars
+      and redeploy, so players never see the personal address
 - [ ] **W** — Confirm the signup date, and whether the season opens live or as practice
 
 ## In flight — the preseason rehearsal
@@ -69,6 +69,7 @@ and reactivates the live season.
 - [x] Negotiated (uneven) split votes with unanimity and silence-as-no
 - [x] Standings — tier, rebuy position, teams used, and picks revealed at kickoff;
       admins see everything immediately
+- [x] Player FAQ at `/faq` — scenario-driven, values read from season config
 - [x] Admin exception resolution, with deduplication so repeats do not pile up
 - [x] Payout checklist at `/admin/payouts` — settle, then tick people off as you send
 - [x] Commissioner pick override — until grading, audited, no-reuse still enforced (D44)

@@ -35,12 +35,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/week">Games</Link>
                   <Link href="/standings">Standings</Link>
                   <Link href="/rules">Rules</Link>
+                  <Link href="/faq">FAQ</Link>
                   <Link href="/account">Account</Link>
                   {user.isAdmin ? <Link href="/admin">Commissioner</Link> : null}
                 </>
               ) : (
                 <>
                   <Link href="/rules">Rules</Link>
+                  <Link href="/faq">FAQ</Link>
                   <Link href="/login">Sign in</Link>
                 </>
               )}

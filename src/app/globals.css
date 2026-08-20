@@ -922,3 +922,43 @@ button[disabled] {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+
+/* ---------------------------------------------------------------- faq */
+
+/*
+ * Collapsed by default so the page is scannable — someone arriving mid-panic
+ * on a Sunday needs to find one question, not read an essay. <details> keeps
+ * it keyboard operable and searchable without JavaScript.
+ */
+.faq-item {
+  border-top: 1px solid var(--border);
+  padding: 0.6rem 0;
+}
+
+.faq-item:first-of-type {
+  border-top: none;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.15rem 0;
+}
+
+.faq-item summary:hover {
+  color: var(--focus);
+}
+
+.faq-answer {
+  padding: 0.2rem 0 0.4rem 0.9rem;
+  border-left: 2px solid var(--border);
+  margin-top: 0.4rem;
+}
+
+.faq-answer p {
+  margin: 0 0 0.6rem;
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}

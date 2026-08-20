@@ -210,6 +210,8 @@ export default async function Dashboard() {
         <Link href="/split">Split the pot</Link>
         {" · "}
         <Link href="/rules">League rules and terms</Link>
+        {" · "}
+        <Link href="/faq">Questions people actually ask</Link>
         {user.isAdmin ? (
           <>
             {" · "}
