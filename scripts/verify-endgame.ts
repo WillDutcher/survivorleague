@@ -257,7 +257,7 @@ async function main() {
   // The reveal is tied to KICKOFF, not to the pick locking. A Monday-night pick
   // locks Sunday but must stay hidden until the game actually starts.
   check("a pick whose game has not started is NOT shown", daveRow.history.length === 0);
-  check("and its current pick is withheld", daveRow.currentPick === null);
+  check("and its current pick is withheld", daveRow.currentPicks.length === 0);
   check("but it is flagged as made-and-hidden", daveRow.currentPickHidden);
 
   check("rebuy position reads as a count on the $80 tier",
@@ -270,8 +270,11 @@ async function main() {
   // The commissioner is exempt from the hold.
   const asAdmin = await loadStandings(seasonId, 4, config, { revealAll: true });
   const daveAdmin = asAdmin.find((r) => r.entryId === dave.entryId)!;
-  check("the commissioner sees the pick before kickoff", daveAdmin.currentPick === "PHI",
-    String(daveAdmin.currentPick));
+  check("the commissioner sees the pick before kickoff", daveAdmin.currentPicks[0]?.teamId === "PHI",
+    String(daveAdmin.currentPicks[0]?.teamId));
+  check("and the pick carries its team colours for display",
+    Boolean(daveAdmin.currentPicks[0]?.team?.colorPrimary),
+    daveAdmin.currentPicks[0]?.team?.colorPrimary ?? "none");
   check("and it is still marked not-public", daveAdmin.currentPickHidden);
   check("and it appears in their history view", daveAdmin.history.length === 1);
 
@@ -281,8 +284,8 @@ async function main() {
   const daveVisible = afterKickoff.find((r) => r.entryId === dave.entryId)!;
   check("once the game starts the pick becomes visible", daveVisible.history.length === 1,
     daveVisible.history.map((h) => h.teamId).join(","));
-  check("and it shows as this week's pick", daveVisible.currentPick === "PHI",
-    String(daveVisible.currentPick));
+  check("and it shows as this week's pick", daveVisible.currentPicks[0]?.teamId === "PHI",
+    String(daveVisible.currentPicks[0]?.teamId));
   check("and is no longer flagged hidden", !daveVisible.currentPickHidden);
 
   console.log("\nWeekly reminder");

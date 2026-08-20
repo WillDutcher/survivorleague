@@ -18,15 +18,18 @@
 
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { entries, games, picks, users, weeks } from "@/db/schema";
+import { entries, games, picks, teams, users, weeks } from "@/db/schema";
 import { tierConfig, type SeasonConfig } from "@/rules/config";
 import type { EntryTier } from "@/rules/types";
+import type { TeamDisplay } from "@/app/team-badge";
 
 export interface StandingPick {
   week: number;
   teamId: string;
   outcome: string;
   source: string;
+  /** Colours and logo for display. Null if the team row is somehow missing. */
+  team: TeamDisplay | null;
 }
 
 export interface StandingRow {
@@ -43,8 +46,8 @@ export interface StandingRow {
   /** Picks whose game has kicked off. Open history. */
   history: StandingPick[];
   usedTeamCount: number;
-  /** This week's pick, once its game has started. */
-  currentPick: string | null;
+  /** This week's picks, once their game has started. Plural: a tie owes more than one. */
+  currentPicks: StandingPick[];
   /** True when a pick exists for this week but its game has not started. */
   currentPickHidden: boolean;
 }
@@ -127,6 +130,28 @@ export async function loadStandings(
     .innerJoin(games, eq(games.id, picks.gameId))
     .where(eq(weeks.seasonId, seasonId));
 
+  // One lookup for all 32, rather than a join that repeats the colours on every
+  // pick row.
+  const teamRows = await db
+    .select({
+      id: teams.id,
+      city: teams.city,
+      name: teams.name,
+      colorPrimary: teams.colorPrimary,
+      colorSecondary: teams.colorSecondary,
+      logoUrl: teams.logoUrl,
+    })
+    .from(teams);
+  const teamById = new Map<string, TeamDisplay>(teamRows.map((t) => [t.id, t]));
+
+  const toPick = (p: (typeof allPicks)[number]): StandingPick => ({
+    week: p.week,
+    teamId: p.teamId,
+    outcome: p.outcome,
+    source: p.source,
+    team: teamById.get(p.teamId) ?? null,
+  });
+
   return rows.map((row) => {
     const mine = allPicks.filter((p) => p.entryId === row.entryId);
     const visible = (p: (typeof mine)[number]) =>
@@ -150,11 +175,9 @@ export async function loadStandings(
       includedRebuysRemaining: row.includedRebuysRemaining,
       rebuyLabel: rebuyLabelFor(row.tier, row.includedRebuysRemaining, currentWeek, config),
       eliminatedAtWeek: row.eliminatedAtWeek,
-      history: started
-        .sort((a, b) => a.week - b.week)
-        .map((p) => ({ week: p.week, teamId: p.teamId, outcome: p.outcome, source: p.source })),
+      history: started.sort((a, b) => a.week - b.week).map(toPick),
       usedTeamCount: mine.length,
-      currentPick: thisWeekVisible.map((p) => p.teamId).join(", ") || null,
+      currentPicks: thisWeekVisible.map(toPick),
       // A pick exists but its game has not started: say so, rather than leaving
       // it blank and indistinguishable from having made no pick at all.
       currentPickHidden: thisWeek.length > 0 && thisWeekStarted.length === 0,

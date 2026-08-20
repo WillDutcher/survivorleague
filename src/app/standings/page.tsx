@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { currentSeason, formatMoney, seasonPotCents } from "@/lib/season";
-import { loadStandings, teamsRemaining, type StandingRow } from "@/lib/standings";
+import { loadStandings, teamsRemaining, type StandingPick, type StandingRow } from "@/lib/standings";
+import { TeamTag } from "@/app/team-tag";
 import { weekLabel, weekLabelShort } from "@/rules/weeks";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +88,12 @@ export default async function StandingsPage() {
               </thead>
               <tbody>
                 {alive.map((row) => (
-                  <PlayerRow key={row.entryId} row={row} seasonType={season.seasonType} />
+                  <PlayerRow
+                    key={row.entryId}
+                    row={row}
+                    seasonType={season.seasonType}
+                    showLogos={season.showTeamLogos}
+                  />
                 ))}
               </tbody>
             </table>
@@ -124,7 +130,7 @@ export default async function StandingsPage() {
                       </span>
                     </td>
                     <td>
-                      <TeamsUsed row={row} seasonType={season.seasonType} />
+                      <TeamsUsed row={row} seasonType={season.seasonType} showLogos={season.showTeamLogos} />
                     </td>
                   </tr>
                 ))}
@@ -151,7 +157,26 @@ export default async function StandingsPage() {
   );
 }
 
-function PlayerRow({ row, seasonType }: { row: StandingRow; seasonType: number }) {
+/**
+ * A team in a standings cell.
+ *
+ * Falls back to the plain abbreviation if the team row is missing, because a
+ * pick with no colours is still a pick and must not vanish from the table.
+ */
+function PickTag({ pick, showLogo }: { pick: StandingPick; showLogo: boolean }) {
+  if (!pick.team) return <strong>{pick.teamId}</strong>;
+  return <TeamTag team={pick.team} showLogo={showLogo} />;
+}
+
+function PlayerRow({
+  row,
+  seasonType,
+  showLogos,
+}: {
+  row: StandingRow;
+  seasonType: number;
+  showLogos: boolean;
+}) {
   return (
     <tr>
       <td>{row.name}</td>
@@ -168,9 +193,13 @@ function PlayerRow({ row, seasonType }: { row: StandingRow; seasonType: number }
         <div className="muted hint">{teamsRemaining(row)} teams left</div>
       </td>
       <td>
-        {row.currentPick ? (
+        {row.currentPicks.length > 0 ? (
           <>
-            <strong>{row.currentPick}</strong>
+            <span className="tag-row">
+              {row.currentPicks.map((p) => (
+                <PickTag key={p.teamId} pick={p} showLogo={showLogos} />
+              ))}
+            </span>
             {/* Only the commissioner reaches this branch: a pick shown while
                 still flagged not-public. The note keeps them from repeating it
                 to the league. */}
@@ -185,7 +214,7 @@ function PlayerRow({ row, seasonType }: { row: StandingRow; seasonType: number }
         )}
       </td>
       <td>
-        <TeamsUsed row={row} seasonType={seasonType} />
+        <TeamsUsed row={row} seasonType={seasonType} showLogos={showLogos} />
       </td>
     </tr>
   );
@@ -198,7 +227,15 @@ function PlayerRow({ row, seasonType }: { row: StandingRow; seasonType: number }
  * information someone checks on a phone before picking. <details> is keyboard
  * operable and needs no JavaScript.
  */
-function TeamsUsed({ row, seasonType }: { row: StandingRow; seasonType: number }) {
+function TeamsUsed({
+  row,
+  seasonType,
+  showLogos,
+}: {
+  row: StandingRow;
+  seasonType: number;
+  showLogos: boolean;
+}) {
   if (row.history.length === 0) {
     return <span className="muted">—</span>;
   }
@@ -211,9 +248,18 @@ function TeamsUsed({ row, seasonType }: { row: StandingRow; seasonType: number }
       <ul className="pick-history">
         {row.history.map((h) => (
           <li key={`${h.week}-${h.teamId}`} className="pick-chip">
-            {weekLabelShort(seasonType, h.week)} {h.teamId}
-            {h.outcome === "win" ? " ✓" : h.outcome === "loss" ? " ✕" : h.outcome === "tie" ? " =" : ""}
-            {h.source === "default" ? " (auto)" : ""}
+            <span className="muted">{weekLabelShort(seasonType, h.week)}</span>
+            <PickTag pick={h} showLogo={showLogos} />
+            <span>
+              {h.outcome === "win"
+                ? "✓ won"
+                : h.outcome === "loss"
+                  ? "✕ lost"
+                  : h.outcome === "tie"
+                    ? "= tied"
+                    : ""}
+              {h.source === "default" ? " (auto)" : ""}
+            </span>
           </li>
         ))}
       </ul>

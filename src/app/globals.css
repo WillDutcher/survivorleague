@@ -731,3 +731,55 @@ button[disabled] {
 .teams-used .pick-history li {
   display: inline-block;
 }
+
+/* ---------------------------------------------------------------- team tags */
+
+/*
+ * The compact team marker used in dense table cells.
+ *
+ * Bold and slightly tracked out: the colour modes cannot always reach the
+ * 4.5:1 body-text contrast floor against a mid-tone team colour, but they do
+ * clear the 3:1 large/bold floor, and setting the label bold is what makes
+ * that the applicable threshold. Colour never carries meaning here — the
+ * abbreviation is always spelled out.
+ */
+.team-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.team-tag-color {
+  border-radius: 4px;
+  border: 1px solid transparent;
+  padding: 0.1rem 0.4rem;
+  /* Every abbreviation is 2-3 characters; a floor keeps the column even. */
+  min-width: 2.6rem;
+  justify-content: center;
+}
+
+.team-tag-logo img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex: none;
+}
+
+/* Several rows of tags in one cell, when a tie owes more than one pick. */
+.tag-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* History entries pair a week label and an outcome around the tag. */
+.teams-used .pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
