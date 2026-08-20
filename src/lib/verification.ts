@@ -44,7 +44,7 @@ export async function issueVerification(userId: string): Promise<string> {
 export async function sendVerificationEmail(
   userId: string,
   origin: string,
-): Promise<{ sent: boolean; error?: string }> {
+): Promise<{ sent: boolean; transport?: "file" | "resend"; error?: string }> {
   const [user] = await db
     .select({ email: users.email, firstName: users.firstName })
     .from(users)
@@ -68,7 +68,9 @@ export async function sendVerificationEmail(
     `,
   });
 
-  return result.delivered ? { sent: true } : { sent: false, ...(result.error ? { error: result.error } : {}) };
+  return result.delivered
+    ? { sent: true, transport: result.transport }
+    : { sent: false, transport: result.transport, ...(result.error ? { error: result.error } : {}) };
 }
 
 export type VerifyResult = { ok: true; userId: string } | { ok: false; message: string };

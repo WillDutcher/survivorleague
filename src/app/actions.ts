@@ -781,9 +781,18 @@ export async function resendVerification(_prev: FormState, _data: FormData): Pro
   const result = await sendVerificationEmail(user.id, origin);
 
   revalidatePath("/dashboard");
-  return result.sent
-    ? { ok: `Confirmation sent to ${user.email}. Locally it is written to ./tmp/mail.` }
-    : { error: result.error ?? "Could not send the confirmation email." };
+  if (!result.sent) {
+    return { error: result.error ?? "Could not send the confirmation email." };
+  }
+  // Say what actually happened rather than assuming local development. In
+  // production this really was delivered; claiming it went to ./tmp/mail would
+  // send someone hunting for a file that does not exist.
+  return {
+    ok:
+      result.transport === "file"
+        ? `Confirmation written to ./tmp/mail for ${user.email} (local development — not really sent).`
+        : `Confirmation sent to ${user.email}. Check your inbox.`,
+  };
 }
 
 // ---------------------------------------------------------------- payment nags

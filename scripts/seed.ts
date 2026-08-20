@@ -83,7 +83,10 @@ async function main() {
     note: "Bootstrap invite created by seed script",
   });
 
-  const url = `http://localhost:3000/join/${token}`;
+  // APP_ORIGIN lets the printed link match wherever the app actually lives,
+  // so seeding production does not hand out a localhost URL.
+  const origin = process.env.APP_ORIGIN ?? "http://localhost:3000";
+  const url = `${origin.replace(/\/$/, "")}/join/${token}`;
 
   console.log("");
   console.log("  Bootstrap invite ready. Sign up here:");
