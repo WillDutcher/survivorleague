@@ -252,17 +252,38 @@ async function main() {
     source: "player", lockAt: new Date(Date.now() + 3_600_000), // not locked yet
   });
 
-  const standings = await loadStandings(seasonId, 4);
+  const standings = await loadStandings(seasonId, 4, config);
   const daveRow = standings.find((r) => r.entryId === dave.entryId)!;
-  check("an unlocked pick is NOT shown in history", daveRow.history.length === 0);
-  check("but it is flagged as made-and-hidden", daveRow.hasHiddenPick);
+  // The reveal is tied to KICKOFF, not to the pick locking. A Monday-night pick
+  // locks Sunday but must stay hidden until the game actually starts.
+  check("a pick whose game has not started is NOT shown", daveRow.history.length === 0);
+  check("and its current pick is withheld", daveRow.currentPick === null);
+  check("but it is flagged as made-and-hidden", daveRow.currentPickHidden);
 
-  await db.update(picks).set({ lockAt: new Date(Date.now() - 1000) }).where(eq(picks.entryId, dave.entryId));
-  const afterLock = await loadStandings(seasonId, 4);
-  const daveLocked = afterLock.find((r) => r.entryId === dave.entryId)!;
-  check("once locked the pick becomes visible", daveLocked.history.length === 1,
-    daveLocked.history.map((h) => h.teamId).join(","));
-  check("and is no longer flagged hidden", !daveLocked.hasHiddenPick);
+  check("rebuy position reads as a count on the $80 tier",
+    /of 3 left/.test(standings.find((r) => r.entryId === dave.entryId)!.rebuyLabel),
+    daveRow.rebuyLabel);
+  const twentyRow = standings.find((r) => r.entryId === tim.entryId);
+  check("and as a window on the $20 tier",
+    /Available through Week 5/.test(twentyRow?.rebuyLabel ?? ""), twentyRow?.rebuyLabel ?? "");
+
+  // The commissioner is exempt from the hold.
+  const asAdmin = await loadStandings(seasonId, 4, config, { revealAll: true });
+  const daveAdmin = asAdmin.find((r) => r.entryId === dave.entryId)!;
+  check("the commissioner sees the pick before kickoff", daveAdmin.currentPick === "PHI",
+    String(daveAdmin.currentPick));
+  check("and it is still marked not-public", daveAdmin.currentPickHidden);
+  check("and it appears in their history view", daveAdmin.history.length === 1);
+
+  // Move the GAME into the past, not the pick's lock time.
+  await db.update(games).set({ kickoff: new Date(Date.now() - 1000) }).where(eq(games.id, g!.id));
+  const afterKickoff = await loadStandings(seasonId, 4, config);
+  const daveVisible = afterKickoff.find((r) => r.entryId === dave.entryId)!;
+  check("once the game starts the pick becomes visible", daveVisible.history.length === 1,
+    daveVisible.history.map((h) => h.teamId).join(","));
+  check("and it shows as this week's pick", daveVisible.currentPick === "PHI",
+    String(daveVisible.currentPick));
+  check("and is no longer flagged hidden", !daveVisible.currentPickHidden);
 
   console.log("\nWeekly reminder");
   const first = await sendWeeklyReminder(seasonId, "Endgame probe", 4, config, "http://localhost:3000");

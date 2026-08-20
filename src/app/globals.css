@@ -693,3 +693,41 @@ button[disabled] {
 .line-age {
   font-size: 0.82rem;
 }
+
+/* ---------------------------------------------------------------- standings */
+
+/* Wide tables scroll inside their own box rather than the page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.th-note {
+  display: block;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.teams-used summary {
+  cursor: pointer;
+  color: var(--focus);
+  font-size: 0.9rem;
+}
+
+.teams-used[open] summary {
+  margin-bottom: 0.4rem;
+}
+
+.teams-used .pick-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-width: 22rem;
+}
+
+.teams-used .pick-history li {
+  display: inline-block;
+}
