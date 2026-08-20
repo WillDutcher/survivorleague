@@ -9,6 +9,9 @@ all season. Last one standing takes the pot.
 
 ## Documents, in reading order
 
+**Looking for a command?** Jump to the [command reference](#command-reference).
+
+
 1. **`CLAUDE.md`** — mission and non-negotiable rules
 2. **`PROJECT_BRIEF.md`** — the original product brief
 3. **`DECISIONS.md`** — rulings made with the commissioner. **Supersedes the brief wherever they conflict.**
@@ -139,6 +142,57 @@ stores the API number and translates only at display time, so players see
 > and `2` for the regular season, and espn.com/nfl/odds shows whichever is next.
 > Syncing exhibition games into a real season would be silent and catastrophic,
 > so preseason has to be chosen deliberately and is quarantined once chosen.
+
+---
+
+## Command reference
+
+Every command, what it does, and when you would run it. All of these are safe to
+run twice unless the last column says otherwise.
+
+### Against production
+
+| Command | What it does | Run it when |
+|---|---|---|
+| `npm run sync:prod -- <week>` | Loads that week's schedule and kickoff times from ESPN | Before a week opens, and again if the NFL flexes a game. **Must run from home** — ESPN blocks servers |
+| `npm run preseason` | Wipes and rebuilds the rehearsal: 15 fake players, split across one game, plus your own account | Testing before the real season. Makes the practice season active |
+| `npm run preseason -- clear` | Deletes the rehearsal and reactivates the live season | Done rehearsing |
+| `npm run reset:league -- WIPE EVERYONE` | Deletes **every account** and all league state. Keeps schedule, teams, odds | Once, before real signups, so testers re-register clean. **Destructive and not reversible** |
+
+### Local development
+
+| Command | What it does | Run it when |
+|---|---|---|
+| `npm run db:up` | Starts the local Postgres container | Beginning of a session |
+| `npm run db:down` | Stops it, keeping the data | End of a session |
+| `npm run db:nuke` | Stops it and **deletes the local data** | Local database is in a bad state |
+| `npm run db:migrate` | Applies pending migrations | After pulling schema changes |
+| `npm run db:generate` | Writes a new migration from schema edits | You changed `src/db/schema.ts` |
+| `npm run db:studio` | Opens a database browser | Inspecting data by hand |
+| `npm run dev` | Starts the app on localhost:3000 | Working on it |
+| `npm run seed` | Creates an empty local season | First run on a fresh database |
+| `npm run sync:fixtures` | Loads saved provider responses, no network | Working offline |
+| `npm run demo` | Builds a local league from real past results | Seeing a full season without waiting |
+| `npm run demo:clear` | Removes the demo league | Done with it |
+
+### Checks
+
+| Command | What it does | Run it when |
+|---|---|---|
+| `npm test` | 184 unit tests: rule engine, parsers, timezone guards, contrast | Before every commit |
+| `npm run typecheck` | TypeScript with no emit | Before every commit |
+| `npm run build` | Full production build | Before pushing anything that touches routing |
+
+### Verification scripts
+
+Eight scripts exercise the database paths against a disposable season. See
+[Testing](#testing) for what each one proves.
+
+### Needs no command at all
+
+Everything on a schedule — odds sync, default picks, results, all five emails —
+runs on Vercel cron without anyone doing anything. The one exception is
+`sync:prod` above. See [Deployment](#deployment).
 
 ---
 
