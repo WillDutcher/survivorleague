@@ -12,9 +12,19 @@
     { "path": "/api/jobs/assign-defaults", "schedule": "59 16 * * 0" },
     { "path": "/api/jobs/assign-defaults", "schedule": "59 17 * * 0" },
 
+    { "path": "/api/jobs/sunday-status", "schedule": "0 17 * * 0" },
+    { "path": "/api/jobs/sunday-status", "schedule": "0 18 * * 0" },
+
     { "path": "/api/jobs/sync-odds", "schedule": "0 0 * * 1" },
     { "path": "/api/jobs/process-results", "schedule": "5 0 * * 1" },
     { "path": "/api/jobs/sync-odds", "schedule": "30 4 * * 1" },
-    { "path": "/api/jobs/process-results", "schedule": "35 4 * * 1" }
+    { "path": "/api/jobs/process-results", "schedule": "35 4 * * 1" },
+
+    { "path": "/api/jobs/sync-odds", "schedule": "45 3 * * 2" },
+    { "path": "/api/jobs/process-results", "schedule": "50 3 * * 2" },
+    { "path": "/api/jobs/monday-recap", "schedule": "59 3 * * 2" },
+    { "path": "/api/jobs/sync-odds", "schedule": "45 4 * * 2" },
+    { "path": "/api/jobs/process-results", "schedule": "50 4 * * 2" },
+    { "path": "/api/jobs/monday-recap", "schedule": "59 4 * * 2" }
   ]
 }

@@ -75,12 +75,12 @@ and reactivates the live season.
 - [x] Commissioner pick override — until grading, audited, no-reuse still enforced (D44)
 - [x] Missing-pick flagging and a targeted "chase missing picks" reminder
 - [x] Team colour/logo tags with per-team WCAG contrast
-- [x] Weekly reminder email
+- [x] Weekly reminder email, Sunday locked-slate digest, and Monday night recap
 - [x] Preseason mode, quarantined and correctly labelled; 15-player rehearsal seeder
 - [x] Demo league seeder from real results
 - [x] `/status` with environment and league health
-- [x] Deployed: Vercel Pro, Neon Postgres, Resend, domain verified, 12 cron schedules
+- [x] Deployed: Vercel Pro, Neon Postgres, Resend, domain verified, 18 cron schedules
 - [x] Job endpoints secured and fail closed
 - [x] All 18 weeks loaded; provider sync reports 0 unmatched
-- [x] 170 tests, plus five database verification scripts against disposable seasons
+- [x] 184 tests, plus five database verification scripts against disposable seasons
 - [x] README, DECISIONS, ARCHITECTURE, NEXT_STEPS

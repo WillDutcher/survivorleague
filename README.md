@@ -154,6 +154,8 @@ will double-charge a rebuy or eliminate anyone twice.
 | **Thursday** | **Send weekly reminder** | Emails the slate, lines, and deadline. Refuses to send twice |
 | **Sunday ~12:59 ET** | **Assign default picks** | Gives the strongest legal favourite to anyone who missed. Deterministic — running it late gives an identical answer |
 | **Sunday night → Tuesday** | **Process results** | Grades picks, applies the tie rule, offers rebuys, eliminates. Leaves alone anyone whose games are not final |
+| **Sunday 1:00 PM ET** | *(automatic)* **Locked-slate digest** | Who picked whom, now that nothing can change. Missing picks are highlighted |
+| **Monday 11:59 PM ET** | *(automatic)* **Week recap** | Who lost, who tied, who owes a rebuy, who is out. Refuses to send if results have not been graded yet |
 | **Any time** | **Send payment reminders** | Escalating nags at 2, 6, 12 days. The app does the chasing, not you |
 | **Before any deadline** | **Chase missing picks** (on `/standings`) | Emails only the players still short, with a link to the pick page. Safe to press repeatedly — it re-checks who is short each time |
 
@@ -225,7 +227,7 @@ rules are the product; everything else is I/O around them.
 npm test
 ```
 
-170 unit tests over the rule engine, the provider parsers, and the contrast
+184 unit tests over the rule engine, the provider parsers, and the contrast
 helpers. No database, no network, no mocks.
 
 Beyond that, several scripts exercise the database paths against a **disposable

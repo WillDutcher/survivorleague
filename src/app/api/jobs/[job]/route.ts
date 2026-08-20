@@ -31,6 +31,8 @@ type JobName =
   | "assign-defaults"
   | "process-results"
   | "weekly-reminder"
+  | "sunday-status"
+  | "monday-recap"
   | "payment-reminders"
   | "close-splits";
 
@@ -39,6 +41,8 @@ const JOBS: JobName[] = [
   "assign-defaults",
   "process-results",
   "weekly-reminder",
+  "sunday-status",
+  "monday-recap",
   "payment-reminders",
   "close-splits",
 ];
@@ -111,6 +115,32 @@ async function runJob(
       case "weekly-reminder": {
         const { sendWeeklyReminder } = await import("@/lib/reminders");
         const report = await sendWeeklyReminder(
+          season.id,
+          season.name,
+          week,
+          season.config,
+          origin,
+          season.seasonType,
+        );
+        return NextResponse.json({ job, week, ...report });
+      }
+
+      case "sunday-status": {
+        const { sendSundayStatus } = await import("@/lib/digest");
+        const report = await sendSundayStatus(
+          season.id,
+          season.name,
+          week,
+          season.config,
+          origin,
+          season.seasonType,
+        );
+        return NextResponse.json({ job, week, ...report });
+      }
+
+      case "monday-recap": {
+        const { sendMondayRecap } = await import("@/lib/digest");
+        const report = await sendMondayRecap(
           season.id,
           season.name,
           week,
