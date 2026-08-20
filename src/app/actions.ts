@@ -841,6 +841,47 @@ export async function overridePickAction(
   return result.ok ? { ok: result.message } : { error: result.message };
 }
 
+// ---------------------------------------------------------------- exceptions
+
+export async function resolveExceptionAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+
+  const id = String(formData.get("exceptionId") ?? "");
+  const note = String(formData.get("note") ?? "");
+  if (!id) return { error: "Missing exception." };
+
+  const { resolveException } = await import("@/lib/exceptions");
+  const r = await resolveException(id, user.id, note);
+
+  revalidatePath("/admin");
+  revalidatePath("/status");
+  return r.ok ? { ok: r.message } : { error: r.message };
+}
+
+export async function resolveKindAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await currentUser();
+  if (!user?.isAdmin) return { error: "Commissioner only." };
+  const season = await currentSeason();
+
+  const kind = String(formData.get("kind") ?? "");
+  const note = String(formData.get("note") ?? "");
+  if (!kind) return { error: "Missing kind." };
+
+  const { resolveAllOfKind } = await import("@/lib/exceptions");
+  const r = await resolveAllOfKind(kind, user.id, note, season?.id);
+
+  revalidatePath("/admin");
+  revalidatePath("/status");
+  return r.ok ? { ok: r.message } : { error: r.message };
+}
+
 // ---------------------------------------------------------------- payouts
 
 export async function settleSeasonAction(

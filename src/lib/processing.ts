@@ -13,8 +13,8 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
+import { raiseException } from "@/lib/exceptions";
 import {
-  adminExceptions,
   auditEvents,
   entries,
   games,
@@ -261,7 +261,7 @@ export async function assignDefaultPicks(
     if (result.shortfall) {
       const message = `${entry.id} could not be assigned ${shortfall} default pick(s): not enough legal teams remain.`;
       report.exceptions.push(message);
-      await db.insert(adminExceptions).values({
+      await raiseException({
         seasonId,
         kind: "shortfall",
         severity: "error",

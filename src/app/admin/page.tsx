@@ -14,6 +14,8 @@ import { OddsSyncControl, ReminderControl, WeekControls } from "./week-controls"
 import { PaymentRow } from "./payment-row";
 import { RevokeInviteButton } from "./revoke-invite-button";
 import { PickOverride } from "./pick-override";
+import { ResolveKind, ResolveOne } from "./exception-row";
+import { openExceptions, resolvedExceptions } from "@/lib/exceptions";
 import { loadOverrideContext } from "@/lib/pick-override";
 import { weekLabel } from "@/rules/weeks";
 
@@ -52,6 +54,9 @@ export default async function AdminPage() {
   const entryNameById = new Map(entries.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
   const overrideWeek = season.currentWeek ?? 1;
   const overrideCtx = await loadOverrideContext(season.id, overrideWeek, season.config);
+  const openIssues = await openExceptions();
+  const recentlyResolved = await resolvedExceptions(5);
+  const issueKinds = [...new Set(openIssues.map((i) => i.kind))];
 
   const awaiting = entries.filter((e) => e.amountOwedCents > 0);
   const active = entries.filter((e) => e.status === "active");
@@ -224,6 +229,82 @@ export default async function AdminPage() {
         <OddsSyncControl />
         <WeekControls defaultWeek={season.currentWeek ?? 1} />
         <ReminderControl defaultWeek={season.currentWeek ?? 1} />
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>
+          Data problems{openIssues.length > 0 ? ` — ${openIssues.length} open` : ""}
+        </h2>
+        <p className="muted">
+          Things the sync refused to guess at. It writes them down rather than picking an
+          answer, because a wrong guess about league data becomes a wrong elimination. Repeats
+          are counted on the same row instead of piling up.
+        </p>
+
+        {openIssues.length === 0 ? (
+          <p className="status-ok"> Nothing outstanding.</p>
+        ) : (
+          <>
+            {issueKinds.length > 0 ? (
+              <div className="bulk-resolve">
+                {issueKinds.map((k) => (
+                  <ResolveKind
+                    key={k}
+                    kind={k}
+                    count={openIssues.filter((i) => i.kind === k).length}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Problem</th>
+                    <th scope="col">Kind</th>
+                    <th scope="col">Seen</th>
+                    <th scope="col">Resolve</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {openIssues.map((i) => (
+                    <tr key={i.id} className={i.severity === "error" ? "row-needs-pick" : undefined}>
+                      <td>
+                        <span className={i.severity === "error" ? "status-bad" : undefined}>
+                          {" "}
+                          {i.message}
+                        </span>
+                      </td>
+                      <td className="muted">{i.kind}</td>
+                      <td className="muted">
+                        {i.seenCount > 1 ? `${i.seenCount}x` : "once"}
+                      </td>
+                      <td>
+                        <ResolveOne exceptionId={i.id} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {recentlyResolved.length > 0 ? (
+          <details style={{ marginTop: "1rem" }}>
+            <summary className="muted">Recently resolved</summary>
+            <ul className="muted hint">
+              {recentlyResolved.map((i) => (
+                <li key={i.id}>
+                  {i.message}
+                  {i.resolvedBy ? ` — ${i.resolvedBy}` : ""}
+                  {i.resolutionNote ? `: ${i.resolutionNote}` : ""}
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </div>
 
       <div className="card">

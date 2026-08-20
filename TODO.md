@@ -11,8 +11,8 @@ Last revised 2026-08-19.
 
 ## Blocking — needed before real money is involved
 
-- [ ] **C** — **Admin exception resolution.** Sync problems are recorded and shown on
-      `/status` but cannot be marked resolved from the UI
+All code blockers are done. What remains here is yours.
+
 - [ ] **W** — Read and edit the terms text in `src/lib/terms.ts`. Bump `TERMS_VERSION`
       if the wording changes materially
 - [ ] **W** — Change `REPLY_TO` to `commissioner@novasurvivorleague.com` so players
@@ -69,6 +69,7 @@ and reactivates the live season.
 - [x] Negotiated (uneven) split votes with unanimity and silence-as-no
 - [x] Standings — tier, rebuy position, teams used, and picks revealed at kickoff;
       admins see everything immediately
+- [x] Admin exception resolution, with deduplication so repeats do not pile up
 - [x] Payout checklist at `/admin/payouts` — settle, then tick people off as you send
 - [x] Commissioner pick override — until grading, audited, no-reuse still enforced (D44)
 - [x] Missing-pick flagging and a targeted "chase missing picks" reminder

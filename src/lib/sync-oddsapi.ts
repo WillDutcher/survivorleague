@@ -13,7 +13,8 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { adminExceptions, games, oddsSnapshots, weeks } from "@/db/schema";
+import { games, oddsSnapshots, weeks } from "@/db/schema";
+import { raiseException } from "@/lib/exceptions";
 import {
   fetchLines,
   fetchScores,
@@ -202,10 +203,9 @@ export async function syncScoresAndLines(
   }
 
   for (const message of result.exceptions) {
-    await db.insert(adminExceptions).values({
+    await raiseException({
       seasonId,
       kind: "sync_conflict",
-      severity: "warning",
       message,
       context: { provider: "the-odds-api" },
     });

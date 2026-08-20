@@ -11,7 +11,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { adminExceptions, games, oddsSnapshots, picks, teams, weeks } from "@/db/schema";
+import { games, oddsSnapshots, picks, teams, weeks } from "@/db/schema";
+import { raiseException } from "@/lib/exceptions";
 import {
   fetchTeams,
   fetchWeek,
@@ -173,11 +174,12 @@ export async function syncWeek(
 
   const linesCaptured = await captureLines(parsed.lines, gameIdByProviderId);
 
+  // Deduped: a sync that runs every day must not stack a fresh copy of the
+  // same unmatched game on top of yesterday's.
   for (const exception of exceptions) {
-    await db.insert(adminExceptions).values({
+    await raiseException({
       seasonId,
       kind: "sync_conflict",
-      severity: "warning",
       message: exception,
       context: { weekNumber },
     });
