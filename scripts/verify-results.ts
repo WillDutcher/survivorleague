@@ -295,6 +295,32 @@ async function main() {
   const defaults = await assignDefaultPicks(seasonId, WEEK, config);
   check("refuses without locked league lines", !defaults.ran);
 
+  console.log("\nDefault picks refuse to run BEFORE the deadline");
+  // The UTC scheduler fires the Sunday job at both DST offsets, so during EST
+  // one firing lands an hour early. Assigning then would steal pick time.
+  const [dw] = await db
+    .select()
+    .from(weeks)
+    .where(and(eq(weeks.seasonId, seasonId), eq(weeks.weekNumber, WEEK)))
+    .limit(1);
+  await db
+    .update(weeks)
+    .set({ linesLockedAt: new Date(), sundayDeadlineAt: new Date(Date.now() + 3_600_000) })
+    .where(eq(weeks.id, dw!.id));
+  const early = await assignDefaultPicks(seasonId, WEEK, config);
+  check(
+    "refuses while players still have time",
+    !early.ran,
+    early.skippedReason?.slice(0, 55) ?? "",
+  );
+
+  await db
+    .update(weeks)
+    .set({ sundayDeadlineAt: new Date(Date.now() - 3_600_000) })
+    .where(eq(weeks.id, dw!.id));
+  const late = await assignDefaultPicks(seasonId, WEEK, config);
+  check("runs once the deadline has passed", late.ran, late.skippedReason ?? "");
+
   await cleanup();
   console.log(failures === 0 ? "\nAll results checks passed.\n" : `\n${failures} FAILED\n`);
   await rawSql.end();

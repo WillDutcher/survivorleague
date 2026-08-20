@@ -420,18 +420,16 @@ Commissioner's worked cases, all consistent with the formula:
 
 **Not yet verified against the real API.** Parsers are written to the documented shape and tested against synthetic payloads. They get checked against real responses as soon as a key exists.
 
-## D36 - Cloudflare runs the schedule; Vercel stays on the free tier
-**Decision:** Scheduled jobs are triggered by a Cloudflare Worker cron, which calls HTTP endpoints at `/api/jobs/<name>` on the deployed app. Vercel Pro is no longer required.
-**Context:** Vercel's free tier caps cron at once per day, which cannot run a job at 12:59 on a Sunday. Pro would solve it at $20/month, but the commissioner's card was declined and billing is not something that should block the build.
-
-**Why this works where the ESPN proxy did not (D35):** that proxy had to reach ESPN, which blocks Cloudflare. This only has to reach the Survivor League app on Vercel - ordinary HTTPS between two services that are happy to talk.
+## D36 - Vercel Cron runs the schedule
+**Decision:** Scheduled jobs are HTTP endpoints at `/api/jobs/<name>`, triggered by Vercel Cron on the schedule in `vercel.json`.
+**History:** a Cloudflare Worker scheduler was built first, because Vercel's free tier caps cron at once daily and the commissioner's card was being declined. The card then went through, so the Worker was deleted - one fewer service, and the job endpoints were the same either way.
 
 **Implication:**
-- Job endpoints FAIL CLOSED. An unset `JOB_TRIGGER_SECRET` refuses every request; it never means "allow everyone". Secrets are compared in constant time.
-- Cron triggers are UTC only and the league runs on Eastern, which shifts an hour at DST. Both offsets are scheduled deliberately, so for half the year a job fires twice. That is safe BECAUSE every job is idempotent - a property of the jobs themselves, not of the scheduler. Missing the Sunday deadline job would matter; running it twice does not.
-- Jobs within one trigger run sequentially: `process-results` depends on `sync-odds` having landed scores first.
-- The Worker also exposes a manual POST for running any job off-schedule, which is how it gets tested.
-- One secret lives in three places: `.env.local`, Vercel, and the Worker.
+- Job endpoints FAIL CLOSED. With neither `CRON_SECRET` nor `JOB_TRIGGER_SECRET` set, every request is refused; an unset secret never means "allow everyone". Compared in constant time.
+- Vercel Cron sends GET with a bearer `CRON_SECRET`; POST is also accepted so a job can be triggered by hand without impersonating the scheduler.
+- Cron is UTC only and the league runs on Eastern, which shifts an hour at DST. The Sunday deadline job is scheduled at BOTH offsets so it can never be missed.
+- That double-scheduling created a real hazard, caught by working the arithmetic: during EST the earlier firing lands at 11:59 ET, an hour BEFORE the 12:55 deadline, and assigning defaults then would take an hour of pick time from players still deciding.
+- FIXED IN THE JOB, not the schedule: `assignDefaultPicks` refuses to run while the week's deadline is still in the future. No cron mistake, manual click, or timezone change can assign a default early. Verified by test.
 
 ---
 

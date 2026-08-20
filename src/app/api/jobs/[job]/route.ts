@@ -1,14 +1,17 @@
 /**
  * Scheduled job endpoints.
  *
- * Called by an external scheduler (a Cloudflare Worker cron trigger — Vercel's
- * free tier caps cron at once daily, which cannot run the Sunday deadline job).
+ * Called by Vercel Cron on the schedule in vercel.json (D36).
  *
  * SECURITY
  * These endpoints move money-adjacent state: they assign picks, grade results,
  * eliminate players and send mail. They are protected by a shared secret in the
  * Authorization header, compared in constant time. No secret configured means
  * every request is refused — failing closed, never open.
+ *
+ * Vercel Cron sends GET with `Authorization: Bearer $CRON_SECRET`, so both GET
+ * and POST run the job and either secret is accepted. POST stays supported so a
+ * job can be triggered by hand without pretending to be the scheduler.
  *
  * IDEMPOTENCE
  * Every job underneath is safe to run twice; that is a property of the jobs
@@ -40,19 +43,27 @@ const JOBS: JobName[] = [
   "close-splits",
 ];
 
-function authorized(request: Request): boolean {
-  const expected = process.env.JOB_TRIGGER_SECRET ?? "";
-  // Fail closed. An unset secret must never mean "allow everyone".
+function matches(provided: string, expected: string | undefined): boolean {
   if (!expected) return false;
-
-  const header = request.headers.get("authorization") ?? "";
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : header;
   if (provided.length !== expected.length) return false;
-
   return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
 }
 
-export async function POST(
+function authorized(request: Request): boolean {
+  const header = request.headers.get("authorization") ?? "";
+  const provided = header.startsWith("Bearer ") ? header.slice(7) : header;
+  if (!provided) return false;
+
+  // Either secret works: CRON_SECRET is what Vercel Cron sends,
+  // JOB_TRIGGER_SECRET is for triggering a job by hand.
+  // Fail closed — with neither configured, nothing is authorized.
+  return (
+    matches(provided, process.env.CRON_SECRET) ||
+    matches(provided, process.env.JOB_TRIGGER_SECRET)
+  );
+}
+
+async function runJob(
   request: Request,
   context: { params: Promise<{ job: string }> },
 ) {
@@ -140,10 +151,6 @@ export async function POST(
   }
 }
 
-/** GET lists the jobs, so the endpoint is discoverable without triggering work. */
-export async function GET(request: Request) {
-  if (!authorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return NextResponse.json({ jobs: JOBS, method: "POST" });
-}
+// Vercel Cron issues GET; manual triggers use POST. Both do the same work.
+export const GET = runJob;
+export const POST = runJob;

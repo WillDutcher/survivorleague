@@ -77,6 +77,7 @@ async function completeRun(runKey: string, result: unknown): Promise<void> {
 interface WeekContext {
   weekId: string;
   weekNumber: number;
+  sundayDeadlineAt: Date | null;
   weekGames: Game[];
   lines: LeagueLine[];
   linesLocked: boolean;
@@ -142,6 +143,7 @@ async function loadWeekContext(
   return {
     weekId: week.id,
     weekNumber,
+    sundayDeadlineAt: week.sundayDeadlineAt,
     weekGames,
     lines,
     linesLocked: Boolean(week.linesLockedAt),
@@ -201,6 +203,25 @@ export async function assignDefaultPicks(
       ran: false,
       skippedReason:
         "League lines are not locked for this week. Lock them first — default picks rank by the league line and must never be assigned from an unlocked or invented one.",
+    };
+  }
+
+  /*
+   * Never assign a default before the deadline has actually passed.
+   *
+   * The scheduler is UTC and the league runs on Eastern, so the Sunday trigger
+   * is scheduled at both offsets to survive DST. During EST the earlier of the
+   * two fires an hour BEFORE 12:55, and assigning then would take an hour of
+   * pick time away from players who were still deciding.
+   *
+   * Enforcing it here rather than in the schedule means no cron mistake, manual
+   * click, or timezone change can ever assign a default early.
+   */
+  if (context.sundayDeadlineAt && now.getTime() < context.sundayDeadlineAt.getTime()) {
+    return {
+      ...report,
+      ran: false,
+      skippedReason: `The deadline has not passed yet (${context.sundayDeadlineAt.toISOString()}). Default picks are only assigned once players are out of time.`,
     };
   }
 
