@@ -51,7 +51,9 @@ brush the daily cap.
 - [ ] **C** — Deploy to Vercel + Neon, verify migrations run against managed Postgres
 - [ ] **C** — Wire cron triggers: odds fetch, Thursday reminder, Sunday 12:59 defaults, result sync
 - [ ] **C** — Secure the job endpoints with `JOB_TRIGGER_SECRET`
-- [ ] **C** — Verify a live ESPN sync works from the deployed app (blocked in my sandbox, works on Will's machine)
+- [x] **C** — ESPN sync from the server: NOT POSSIBLE. ESPN blocks Vercel and Cloudflare Workers alike (D34, D35)
+- [x] **C** — Scores and lines from the server via The Odds API: WORKING, verified live on the deployed app
+- [ ] **W** — Load remaining weeks: `npm run sync:prod -- 2`, `3`, … so provider games have something to match
 - [ ] **C** — Smoke-test the whole flow on the deployed instance before real signups
 
 ## Decided, no action needed

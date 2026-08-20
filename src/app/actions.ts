@@ -862,7 +862,14 @@ export async function runOddsSync(_prev: FormState, _data: FormData): Promise<Fo
       `${report.scoresUpdated} score(s) updated`,
       `${report.linesCaptured} line(s) captured`,
     ];
-    if (report.unmatched > 0) parts.push(`${report.unmatched} provider game(s) matched nothing`);
+    // The provider returns the whole season; only weeks whose schedule has been
+    // loaded can match. A large number here is normal early on and is not a
+    // failure, so say so rather than leaving a scary bare count.
+    if (report.unmatched > 0) {
+      parts.push(
+        `${report.unmatched} provider game(s) belong to weeks not loaded yet (normal — load more weeks to match them)`,
+      );
+    }
     if (report.creditsRemaining) parts.push(`${report.creditsRemaining} API credits left`);
 
     return {
