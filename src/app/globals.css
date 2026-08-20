@@ -628,3 +628,68 @@ button[disabled] {
   padding: 0.05rem 0.45rem;
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------- week nav */
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.week-pips {
+  list-style: none;
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.week-pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.week-pip:hover {
+  border-color: var(--focus);
+}
+
+/* Current page is marked by weight and border, not colour alone. */
+.week-pip.is-current {
+  font-weight: 700;
+  border-color: var(--text);
+  border-width: 2px;
+}
+
+.week-pip.is-past {
+  opacity: 0.55;
+}
+
+/* The live week gets an underline so it is distinguishable without colour. */
+.week-pip.is-live {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.line-unlocked {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.line-age {
+  font-size: 0.82rem;
+}

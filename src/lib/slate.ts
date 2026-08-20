@@ -26,6 +26,9 @@ export interface SlateGame {
   favoriteTeamId: string | null;
   spread: number | null;
   lineIsLocked: boolean;
+  /** When this line was captured from the provider. Nothing here is live. */
+  lineCapturedAt: Date | null;
+  lineProvider: string | null;
 }
 
 export interface Slate {
@@ -64,13 +67,27 @@ export async function loadSlate(
   const allTeams = await db.select().from(teams);
   const teamById = new Map(allTeams.map((t) => [t.id, t]));
 
-  // League lines only. A candidate snapshot that has not been locked must never
-  // influence what a player sees as "the league's line" (D10).
-  const lines = await db
-    .select()
-    .from(oddsSnapshots)
-    .where(eq(oddsSnapshots.isLeagueLine, true));
-  const lineByGame = new Map(lines.map((l) => [l.gameId, l]));
+  /*
+   * Two different things share this field, and the distinction matters.
+   *
+   * A LOCKED league line is authoritative: default picks rank by it, forever,
+   * and it must never change once locked (D10).
+   *
+   * Before the commissioner locks, there is no league line — only candidate
+   * snapshots from the last sync. Showing the most recent candidate is useful to
+   * a player deciding a pick, but it is explicitly marked unlocked so nobody
+   * mistakes it for the number the league will actually run on.
+   */
+  const allLines = await db.select().from(oddsSnapshots).orderBy(asc(oddsSnapshots.capturedAt));
+  const lineByGame = new Map<string, (typeof allLines)[number]>();
+  for (const line of allLines) {
+    const existing = lineByGame.get(line.gameId);
+    // A locked line always wins. Otherwise the newest candidate.
+    if (!existing || line.isLeagueLine || (!existing.isLeagueLine && line.capturedAt >= existing.capturedAt)) {
+      if (existing?.isLeagueLine && !line.isLeagueLine) continue;
+      lineByGame.set(line.gameId, line);
+    }
+  }
 
   const deadline = week.sundayDeadlineAt;
 
@@ -91,7 +108,9 @@ export async function loadSlate(
       homeScore: game.homeScore,
       favoriteTeamId: line?.favoriteTeamId ?? null,
       spread: line?.spread ? Number(line.spread) : null,
-      lineIsLocked: Boolean(line),
+      lineIsLocked: Boolean(line?.isLeagueLine),
+      lineCapturedAt: line?.capturedAt ?? null,
+      lineProvider: line?.provider ?? null,
     };
   });
 
@@ -136,9 +155,19 @@ export function inLeagueTime(date: Date, config: SeasonConfig, opts?: Intl.DateT
   }).format(date);
 }
 
-/** "PHI -3.5" style label for the league line. */
+/** Week numbers that have a schedule loaded, for the week picker. */
+export async function loadedWeeks(seasonId: string): Promise<number[]> {
+  const rows = await db
+    .select({ weekNumber: weeks.weekNumber })
+    .from(weeks)
+    .where(eq(weeks.seasonId, seasonId))
+    .orderBy(asc(weeks.weekNumber));
+  return rows.map((r) => r.weekNumber);
+}
+
+/** "PHI -3.5" style label. Null when no line was captured at all. */
 export function lineLabel(game: SlateGame): string | null {
-  if (!game.lineIsLocked || game.spread === null) return null;
+  if (game.spread === null) return null;
   if (!game.favoriteTeamId || game.spread === 0) return "Pick'em";
   return `${game.favoriteTeamId} -${game.spread}`;
 }

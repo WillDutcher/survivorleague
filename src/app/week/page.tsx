@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { currentSeason, entryForUser, weekLabel } from "@/lib/season";
-import { inLeagueTime, lineLabel, loadSlate } from "@/lib/slate";
+import { inLeagueTime, lineLabel, loadSlate, loadedWeeks } from "@/lib/slate";
+import { capturedAgo, lineVisibility } from "@/rules/lines";
+import { WeekNav } from "./week-nav";
 import { availabilityFor, loadEntryPickContext } from "@/lib/picks";
 import { TeamBadge } from "@/app/team-badge";
 import { PickButton } from "./pick-button";
@@ -30,8 +32,10 @@ export default async function WeekPage({
   if (!season) redirect("/dashboard");
 
   const { week } = await searchParams;
-  const weekNumber = Number(week ?? season.currentWeek ?? 1);
+  const currentWeek = season.currentWeek ?? 1;
+  const weekNumber = Number(week ?? currentWeek);
   const slate = await loadSlate(season.id, weekNumber, season.config);
+  const available = await loadedWeeks(season.id);
 
   if (!slate) {
     return (
@@ -98,6 +102,13 @@ export default async function WeekPage({
         <Link href="/dashboard">Back to dashboard</Link>
       </div>
 
+      <WeekNav
+        seasonType={season.seasonType}
+        current={weekNumber}
+        available={available}
+        currentWeek={currentWeek}
+      />
+
       {season.seasonType === 1 ? (
         <div className="card callout-warning">
           <p style={{ margin: 0 }}>
@@ -140,10 +151,10 @@ export default async function WeekPage({
         </div>
       )}
 
-      {!slate.linesLockedAt ? (
+      {weekNumber === currentWeek && !slate.linesLockedAt ? (
         <p className="muted">
-          Point spreads have not been locked for this week, so no lines are shown. Spreads are
-          informational and never decide whether a pick survives.
+          Spreads below are the most recent captured, <strong>not yet locked</strong> by the
+          commissioner. They are informational and never decide whether a pick survives.
         </p>
       ) : null}
 
@@ -151,12 +162,28 @@ export default async function WeekPage({
         {slate.games.map((game) => {
           const locked = now >= game.lockAt;
           const line = lineLabel(game);
+          const visibility = lineVisibility({
+            weekNumber,
+            currentWeek,
+            kickoff: game.kickoff,
+            now,
+            hasLine: line !== null,
+          });
+          const showLine = visibility === "show";
 
           return (
             <li key={game.id} className="matchup matchup-pickable">
               <div className="matchup-header">
                 <span className="muted">{inLeagueTime(game.kickoff, season.config)}</span>
-                {line ? <span className="line-chip">{line}</span> : null}
+                {showLine ? (
+                  <span className="line-chip" title={`${game.lineProvider ?? "provider"} line`}>
+                    {line}
+                    {game.lineIsLocked ? null : <span className="line-unlocked"> (not locked)</span>}
+                  </span>
+                ) : null}
+                {showLine && game.lineCapturedAt ? (
+                  <span className="muted line-age">as of {capturedAgo(game.lineCapturedAt, now)}</span>
+                ) : null}
                 <span className={locked ? "status-bad" : "status-ok"}>
                   {" "}
                   {locked ? "Locked" : `Locks ${inLeagueTime(game.lockAt, season.config)}`}
